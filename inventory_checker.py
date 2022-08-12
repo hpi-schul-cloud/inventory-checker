@@ -6,15 +6,19 @@ import sys
 import time
 from constants import Constants
 from cve_sources.mitre_cve import MitreCVE
+from dotenv import load_dotenv
+
+from notifier import Notifier
 
 class InventoryChecker:
     def run(self):
+        load_dotenv()
         logging.basicConfig(level = logging.INFO, format='%(asctime)s - %(levelname)s: %(message)s')
         logging.info('Loading keywords...')
         inventory = self.load_inventory()
 
         logging.info(f'Looking for: {inventory}')
-        logging.info(f'within last {Constants.interval}')
+        logging.info(f'within last {Constants.interval.days} days')
         print()
 
         offset = time.timezone if (time.localtime().tm_isdst == 0) else time.altzone
@@ -35,13 +39,15 @@ class InventoryChecker:
         new_cve_size = len(new_cves)
 
         if new_cve_size == 0:
-            logging.info(f'No new CVE\'s within last {Constants.interval}')
+            logging.info(f'No new CVE\'s within last {Constants.interval.days} days')
             sys.exit(0)
 
-        logging.warning(f"{new_cve_size} new CVE's within last {Constants.interval}")
+        logging.warning(f"{new_cve_size} new CVE's within last {Constants.interval.days} days")
         for cve in new_cves.values():
             logging.warning(f"{cve}")
             print()
+
+        Notifier(new_cves)
 
     def load_cves(self):
         if not exists(Constants.cve_file_path):
