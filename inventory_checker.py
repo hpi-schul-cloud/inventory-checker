@@ -1,14 +1,18 @@
-from datetime import timedelta, timezone, datetime
-from genericpath import exists
 import json
 import logging
 import sys
 import time
-from constants import Constants
-from cve_sources.mitre_cve import MitreCVE
-from dotenv import load_dotenv
+from datetime import datetime, timedelta, timezone
 
+from dotenv import load_dotenv
+from genericpath import exists
+
+from constants import Constants
+from cve_sources.cisa_cve import CisaCVE
+from cve_sources.mitre_cve import MitreCVE
+from cve_sources.nvd_cve import NvdCVE
 from notifier import Notifier
+
 
 class InventoryChecker:
     def run(self):
@@ -31,10 +35,16 @@ class InventoryChecker:
 
         new_cves = {}
 
-        # Fetch new CVEs from different sources
         mitre_cves = MitreCVE(saved_cves, now, start_date, inventory, new_cves).fetch_cves()
         new_cves.update(mitre_cves)
 
+        cisa_cves = CisaCVE(saved_cves, now, start_date, inventory, new_cves).fetch_cves()
+        new_cves.update(cisa_cves)
+
+        nvd_cves = NvdCVE(saved_cves, now, start_date, inventory, new_cves).fetch_cves()
+        new_cves.update(nvd_cves)
+
+        # save new cves
         self.save_cves(saved_cves, new_cves)
         new_cve_size = len(new_cves)
 

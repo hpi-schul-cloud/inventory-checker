@@ -1,9 +1,10 @@
-from datetime import datetime
-import json
 import os
+from datetime import datetime
+
 import requests
 
 from constants import Constants
+
 
 class Notifier:
     def __init__(self, new_cves):
@@ -17,7 +18,7 @@ class Notifier:
         attachments = []
 
         for cve in new_cves.values():
-            date = datetime.strptime(cve["date"], "%Y%m%d").strftime("%d.%m.%Y")
+            date = cve["date"]
             key = cve["keyword"].upper()
             name = cve["name"]
             title = f"{date} | {key} - {name}"
