@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+from hashlib import new
 
 import requests
 
@@ -7,32 +8,32 @@ from constants import Constants
 
 
 class Notifier:
-    def __init__(self, new_cves):
+    def __init__(self, new_cves: dict):
         if len(new_cves) == 0:
             return
 
-        self.notify_rocketchat(new_cves)
+        self.new_cves = new_cves
+        self.notify_rocketchat()
 
-    def notify_rocketchat(self, new_cves):
-        msg = f"Found {len(new_cves)} new CVE's within last {Constants.interval.days} days:"
+    def notify_rocketchat(self):
+        msg = f"Found {len(self.new_cves)} new CVE's within last {Constants.interval.days} days:"
         attachments = []
 
-        for cve in new_cves.values():
-            date = cve["date"]
-            key = cve["keyword"].upper()
-            name = cve["name"]
-            title = f"{date} | {key} - {name}"
+        for cve in self.new_cves.values():
+            date: str = cve["date"]
+            keyword: str = cve["keyword"].upper()
+            name: str = cve["name"]
+            title: str = f"{date} | {keyword} - {name}"
 
-            attachments.append({
-                "title": title,
-                "title_link": cve["url"],
-                "text": cve["description"],
-                "color": "danger"
-            })
+            attachments.append(
+                {
+                    "title": title,
+                    "title_link": cve["url"],
+                    "text": cve["description"],
+                    "color": "danger",
+                }
+            )
 
-        data = {
-            "text": msg,
-            "attachments": attachments
-        }
+        data = {"text": msg, "attachments": attachments}
 
         requests.post(os.getenv("ROCKETCHAT_WEBHOOK"), json=data)
