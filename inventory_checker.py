@@ -23,17 +23,21 @@ class InventoryChecker:
         logging.basicConfig(
             level=logging.INFO, format="%(asctime)s - %(levelname)s: %(message)s"
         )
-        logging.info("Loading keywords...")
-        inventory = self.load_inventory()
-
-        logging.info(f"Looking for: {inventory}")
-        logging.info(f"within last {Constants.interval.days} days")
-        print()
-
         offset = time.timezone if (time.localtime().tm_isdst == 0) else time.altzone
         local_timezone = timezone(timedelta(seconds=offset))
         now = datetime.now(local_timezone)
         start_date = now - Constants.interval
+
+        logging.info("Loading keywords...")
+        inventory = self.load_inventory()
+
+        logging.info("Cleaning old CVE's...")
+        self.clean_old_cves(start_date)
+
+        print()
+        logging.info(f"Looking for: {inventory}")
+        logging.info(f"within last {Constants.interval.days} days")
+        print()
 
         # Load old CVEs for no duplications
         saved_cves = self.load_cves()
@@ -110,6 +114,19 @@ class InventoryChecker:
         saved_cves.update(cves)
         file.write(json.dumps(saved_cves))
         file.close()
+
+    def clean_old_cves(self, start_date: datetime):
+        cve_list = self.load_cves().values()
+
+        new_cves = {}
+
+        for cve in cve_list:
+            if datetime.strptime(cve["date"], "%d.%m.%Y").timestamp() >= start_date.timestamp():
+                new_cves[cve["name"]] = cve
+
+        self.save_cves({}, new_cves)
+
+        logging.info(f"Cleaned {len(cve_list) - len(new_cves)} CVE's!")
 
 
 if __name__ == "__main__":
