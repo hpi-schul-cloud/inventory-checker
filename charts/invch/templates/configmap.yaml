@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "invch.fullname" . }}
+  labels:
+{{ include "invch.labels" . | indent 4 }}
+data:
+  {{- range $key, $value := .Values.env.public }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}
