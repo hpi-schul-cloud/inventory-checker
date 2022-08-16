@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 import schedule
 from dotenv import load_dotenv
 from genericpath import exists
+from prometheus_client import Gauge, Summary, start_http_server
 
 from constants import Constants
 from cve_sources.cert_cve import CertCVE
@@ -18,11 +19,10 @@ from notifier import Notifier
 
 
 class InventoryChecker:
+    REQUEST_TIME = Summary('request_processing_seconds', 'Time spent processing request')
+
+    @REQUEST_TIME.time()
     def run(self):
-        load_dotenv()
-        logging.basicConfig(
-            level=logging.INFO, format="%(asctime)s - %(levelname)s: %(message)s"
-        )
         offset = time.timezone if (time.localtime().tm_isdst == 0) else time.altzone
         local_timezone = timezone(timedelta(seconds=offset))
         now = datetime.now(local_timezone)
@@ -131,6 +131,13 @@ class InventoryChecker:
 
 if __name__ == "__main__":
     try:
+        load_dotenv()
+        logging.basicConfig(
+            level=logging.INFO, format="%(asctime)s - %(levelname)s: %(message)s"
+        )
+        logging.info("Starting prometheus on port " + str(Constants.prometheus_port) + "...")
+        start_http_server(Constants.prometheus_port)
+
         schedule.every().hour.do(InventoryChecker().run)
         schedule.run_all()
         
