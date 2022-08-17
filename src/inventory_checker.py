@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import sys
 import time
 from datetime import datetime, timedelta, timezone
@@ -17,7 +18,7 @@ from cve_sources.nvd_cve import NvdCVE
 from cve_sources.vuldb_cve import VuldbCVE
 from notifier import Notifier
 
-
+CVE_GAUGE = Gauge("cves_total", "This is the count of the current cve's")
 class InventoryChecker:
     REQUEST_TIME = Summary('request_processing_seconds', 'Time spent processing request')
 
@@ -66,6 +67,8 @@ class InventoryChecker:
         # save new cves
         self.save_cves(saved_cves, new_cves)
         new_cve_size = len(new_cves)
+
+        CVE_GAUGE.set(new_cve_size)
 
         if new_cve_size == 0:
             logging.info(f"No new CVE's within last {Constants.interval.days} days")
@@ -131,10 +134,17 @@ class InventoryChecker:
 
 if __name__ == "__main__":
     try:
-        load_dotenv()
         logging.basicConfig(
             level=logging.INFO, format="%(asctime)s - %(levelname)s: %(message)s"
         )
+        logging.info("Loading env variables...")
+        load_dotenv()
+        print(os.getenv("INTERVAL"))
+        if os.getenv("INTERVAL"):
+            Constants.interval = timedelta(days=int(os.getenv("INTERVAL")))
+        if os.getenv("PROMETHEUS_PORT"):
+            Constants.prometheus_port = timedelta(days=int(os.getenv("PROMETHEUS_PORT")))
+        
         logging.info("Starting prometheus on port " + str(Constants.prometheus_port) + "...")
         start_http_server(Constants.prometheus_port)
 
