@@ -2,9 +2,9 @@ from datetime import timedelta
 
 
 class Constants:
-    cve_file_path = "json/cves.json"
+    cve_file_path = "src/json/cves.json"
     interval = timedelta(days=30)
-    inventory_file_path = "json/inventory_list.json"
+    inventory_file_path = "src/json/inventory_list.json"
     prometheus_port = 9000
 
     # CVE Source URLs
