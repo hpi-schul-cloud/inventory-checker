@@ -50,6 +50,8 @@ class CisaCVE:
                     "date": date_converted.strftime("%d.%m.%Y"),
                     "keyword": keyword,
                     "description": description,
+                    "severity": "unknown",
+                    "affected_versions": [],
                 }
 
         return self.new_cves

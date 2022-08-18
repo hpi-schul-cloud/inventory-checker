@@ -9,7 +9,6 @@ class Constants:
     PROMETHEUS_PORT = 9000
 
     # CVE Source URLs
-    MITRE_CVE_URL = "https://cve.mitre.org/data/downloads/allitems.xml"
     CISA_CVE_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
     NVD_CVE_URL = "https://services.nvd.nist.gov/rest/json/cves/1.0/"
     VULDB_CVE_URL = "https://vuldb.com/?rss.recent"

@@ -13,7 +13,6 @@ from prometheus_client import Gauge, Summary, start_http_server
 from constants import Constants
 from cve_sources.cert_cve import CertCVE
 from cve_sources.cisa_cve import CisaCVE
-from cve_sources.mitre_cve import MitreCVE
 from cve_sources.nvd_cve import NvdCVE
 from cve_sources.vuldb_cve import VuldbCVE
 from notifier import Notifier
@@ -45,24 +44,20 @@ class InventoryChecker:
 
         new_cves = {}
 
-        mitre_cves = MitreCVE(
-            saved_cves, now, start_date, inventory, new_cves
-        ).fetch_cves()
-        new_cves.update(mitre_cves)
-
         cisa_cves = CisaCVE(
             saved_cves, now, start_date, inventory, new_cves
         ).fetch_cves()
         new_cves.update(cisa_cves)
-
-        nvd_cves = NvdCVE(saved_cves, now, start_date, inventory, new_cves).fetch_cves()
-        new_cves.update(nvd_cves)
 
         vuldb_cves = VuldbCVE(saved_cves, now, start_date, inventory, new_cves).fetch_cves()
         new_cves.update(vuldb_cves)
 
         cert_cves = CertCVE(saved_cves, now, start_date, inventory, new_cves).fetch_cves()
         new_cves.update(cert_cves)
+
+        # Needs to be last to fetch versions of affected products
+        nvd_cves = NvdCVE(saved_cves, now, start_date, inventory, new_cves).fetch_cves()
+        new_cves.update(nvd_cves)
 
         # save new cves
         self.save_cves(saved_cves, new_cves)

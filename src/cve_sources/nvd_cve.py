@@ -3,6 +3,7 @@ from operator import contains
 
 import requests
 from constants import Constants
+from utils.severity_util import SeverityUtil
 
 
 class NvdCVE:
@@ -37,11 +38,6 @@ class NvdCVE:
 
             name: str = child["cve"]["CVE_data_meta"]["ID"]
             
-            if contains(self.saved_cves.keys(), name) or contains(
-                self.new_cves.keys(), name
-            ):
-                continue
-
             description_data: list = child["cve"]["description"]["description_data"]
             description = next(
                 (elem for elem in description_data if elem["lang"] == "en"),
@@ -57,12 +53,60 @@ class NvdCVE:
                 False,
             )
             if keyword:
+                impact_data: list = child["impact"]
+                severity = "unknown"
+
+                versions = self.retrieve_versions(child["configurations"]["nodes"])
+
+                if impact_data["baseMetricV3"] != None:
+                    severity = SeverityUtil.getUniformSeverity(impact_data["baseMetricV3"]["cvssV3"]["baseSeverity"])
+
+                if contains(self.saved_cves.keys(), name) or contains(
+                self.new_cves.keys(), name
+                ):
+                    if self.new_cves.get(name) != None and self.new_cves.get(name)["severity"] == "unknown":
+                        self.new_cves.get(name)["severity"] = severity
+
+                    if self.new_cves.get(name) != None and len(self.new_cves.get(name)["affected_versions"]) == 0:
+                        self.new_cves.get(name)["affected_versions"] = versions
+                    continue
+
                 self.new_cves[name] = {
                     "name": name,
                     "url": f"https://nvd.nist.gov/vuln/detail/{name}",
                     "date": date_converted.strftime("%d.%m.%Y"),
                     "keyword": keyword,
                     "description": description,
+                    "severity": severity,
+                    "affected_versions": versions,
                 }
 
         return self.new_cves
+
+    def retrieve_versions(self, child):
+        versions = []
+
+        for node_data in child:
+            if node_data["operator"] == "AND":
+                self.retrieve_versions(node_data["children"])
+
+            if node_data["operator"] == "OR":
+                for version_data in node_data["cpe_match"]:
+                    start = ""
+                    end = ""
+                    
+                    if version_data.get("versionStartIncluding"):
+                        start = version_data["versionStartIncluding"]
+                    
+                    if version_data.get("versionEndExcluding"):
+                        end = version_data["versionEndExcluding"]
+
+                    if start == "" and end == "":
+                        continue
+
+                    version = start + "-" + end
+
+                    if not contains(versions, version):
+                        versions.append(version)
+
+        return versions

@@ -3,6 +3,7 @@ from operator import contains
 
 import requests
 from constants import Constants
+from utils.severity_util import SeverityUtil
 
 
 class CertCVE:
@@ -25,16 +26,6 @@ class CertCVE:
             if date_converted.timestamp() < self.start_date.timestamp():
                 continue
 
-            exit: bool = False
-            for cve in child["cves"]:
-                    if contains(self.saved_cves.keys(), cve) or contains(
-                        self.new_cves.keys(), cve
-                    ):
-                        exit = True
-                        break
-
-            if exit: continue
-
             name: str = child["cves"][len(child["cves"]) - 1]
             description = child["title"]
 
@@ -47,12 +38,31 @@ class CertCVE:
                 False,
             )
             if keyword:
+                severity = "unknown"
+
+                if child["classification"] != None:
+                    severity = SeverityUtil.getUniformSeverity(child["classification"])
+
+                exit: bool = False
+                for cve in child["cves"]:
+                    if contains(self.saved_cves.keys(), cve) or contains(
+                        self.new_cves.keys(), cve
+                    ):
+                        if self.new_cves.get(name) != None and self.new_cves.get(name)["severity"] == "unknown":
+                            self.new_cves.get(name)["severity"] = severity
+                        exit = True
+                        break
+
+                if exit: continue
+
                 self.new_cves[name] = {
                     "name": name,
                     "url": f"https://wid.cert-bund.de/portal/wid/securityadvisory?name={child['name']}",
                     "date": date_converted.strftime("%d.%m.%Y"),
                     "keyword": keyword,
                     "description": description,
+                    "severity": severity,
+                    "affected_versions": [],
                 }
 
         return self.new_cves
