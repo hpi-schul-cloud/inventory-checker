@@ -7,6 +7,7 @@ class Constants:
     SCHEDULER_INTERVAL = 1000 * 60 * 60
     INVENTORY_FILE_PATH = "src/json/inventory_list.json"
     PROMETHEUS_PORT = 9000
+    ROCKETCHAT_WEBHOOK = None
 
     # CVE Source URLs
     CISA_CVE_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"

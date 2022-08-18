@@ -9,7 +9,7 @@ from constants import Constants
 
 class Notifier:
     def __init__(self, new_cves: dict):
-        if len(new_cves) == 0:
+        if len(new_cves) == 0 or not Constants.ROCKETCHAT_WEBHOOK:
             return
 
         self.new_cves = new_cves
@@ -36,4 +36,4 @@ class Notifier:
 
         data = {"text": msg, "attachments": attachments}
 
-        requests.post(os.getenv("ROCKETCHAT_WEBHOOK"), json=data)
+        requests.post(Constants.ROCKETCHAT_WEBHOOK, json=data)

@@ -142,6 +142,9 @@ if __name__ == "__main__":
             
         if os.getenv("PROMETHEUS_PORT"):
             Constants.PROMETHEUS_PORT = timedelta(days=int(os.getenv("PROMETHEUS_PORT")))
+
+        if os.getenv("ROCKETCHAT_WEBHOOK"):
+            Constants.ROCKETCHAT_WEBHOOK = os.getenv("ROCKETCHAT_WEBHOOK")
         
         logging.info("Starting prometheus on port " + str(Constants.PROMETHEUS_PORT) + "...")
         start_http_server(Constants.PROMETHEUS_PORT)
