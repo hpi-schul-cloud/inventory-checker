@@ -14,7 +14,7 @@ class CisaCVE:
         self.new_cves = new_cves
 
     def fetch_cves(self):
-        root: dict = requests.get(Constants.cisa_cve_url).json()
+        root: dict = requests.get(Constants.CISA_CVE_URL).json()
 
         for child in root["vulnerabilities"]:
             date: str = child["dateAdded"]

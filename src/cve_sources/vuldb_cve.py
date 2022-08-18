@@ -17,7 +17,7 @@ class VuldbCVE:
         self.new_cves = new_cves
 
     def fetch_cves(self):
-        response = requests.get(Constants.vuldb_cve_url)
+        response = requests.get(Constants.VULDB_CVE_URL)
         root = ET.fromstring(response.content)
 
         for child in root[0].findall("item"):

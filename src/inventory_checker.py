@@ -27,7 +27,7 @@ class InventoryChecker:
         offset = time.timezone if (time.localtime().tm_isdst == 0) else time.altzone
         local_timezone = timezone(timedelta(seconds=offset))
         now = datetime.now(local_timezone)
-        start_date = now - Constants.interval
+        start_date = now - Constants.INTERVAL
 
         logging.info("Loading keywords...")
         inventory = self.load_inventory()
@@ -37,7 +37,7 @@ class InventoryChecker:
 
         print()
         logging.info(f"Looking for: {inventory}")
-        logging.info(f"within last {Constants.interval.days} days")
+        logging.info(f"within last {Constants.INTERVAL.days} days")
         print()
 
         # Load old CVEs for no duplications
@@ -71,14 +71,14 @@ class InventoryChecker:
         CVE_GAUGE.set(new_cve_size)
 
         if new_cve_size == 0:
-            logging.info(f"No new CVE's within last {Constants.interval.days} days")
+            logging.info(f"No new CVE's within last {Constants.INTERVAL.days} days")
             print()
             print("=======================")
             print()
             return
 
         logging.warning(
-            f"{new_cve_size} new CVE's within last {Constants.interval.days} days"
+            f"{new_cve_size} new CVE's within last {Constants.INTERVAL.days} days"
         )
         for cve in new_cves.values():
             logging.warning(f"{cve}")
@@ -90,10 +90,10 @@ class InventoryChecker:
         print()
 
     def load_cves(self):
-        if not exists(Constants.cve_file_path):
+        if not exists(Constants.CVE_FILE_PATH):
             return {}
 
-        file = open(Constants.cve_file_path)
+        file = open(Constants.CVE_FILE_PATH)
         s = file.read()
         file.close()
 
@@ -103,17 +103,17 @@ class InventoryChecker:
         return json.loads(s)
 
     def load_inventory(self):
-        if not exists(Constants.inventory_file_path):
+        if not exists(Constants.INVENTORY_FILE_PATH):
             return []
 
-        file = open(Constants.inventory_file_path)
+        file = open(Constants.INVENTORY_FILE_PATH)
         s = file.read()
         file.close()
 
         return json.loads(s)
 
     def save_cves(self, saved_cves, cves):
-        file = open(Constants.cve_file_path, "w")
+        file = open(Constants.CVE_FILE_PATH, "w")
         saved_cves.update(cves)
         file.write(json.dumps(saved_cves))
         file.close()
@@ -139,16 +139,19 @@ if __name__ == "__main__":
         )
         logging.info("Loading env variables...")
         load_dotenv()
-        print(os.getenv("INTERVAL"))
-        if os.getenv("INTERVAL"):
-            Constants.interval = timedelta(days=int(os.getenv("INTERVAL")))
-        if os.getenv("PROMETHEUS_PORT"):
-            Constants.prometheus_port = timedelta(days=int(os.getenv("PROMETHEUS_PORT")))
-        
-        logging.info("Starting prometheus on port " + str(Constants.prometheus_port) + "...")
-        start_http_server(Constants.prometheus_port)
+        if os.getenv("SCHEDULER_INTERVAL"):
+            Constants.SCHEDULER_INTERVAL = int(os.getenv("SCHEDULER_INTERVAL"))
 
-        schedule.every().hour.do(InventoryChecker().run)
+        if os.getenv("INTERVAL"):
+            Constants.INTERVAL = timedelta(days=int(os.getenv("INTERVAL")))
+            
+        if os.getenv("PROMETHEUS_PORT"):
+            Constants.PROMETHEUS_PORT = timedelta(days=int(os.getenv("PROMETHEUS_PORT")))
+        
+        logging.info("Starting prometheus on port " + str(Constants.PROMETHEUS_PORT) + "...")
+        start_http_server(Constants.PROMETHEUS_PORT)
+
+        schedule.every(Constants.SCHEDULER_INTERVAL).seconds.do(InventoryChecker().run)
         schedule.run_all()
         
         while True:

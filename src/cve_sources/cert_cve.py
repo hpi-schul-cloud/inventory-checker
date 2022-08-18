@@ -14,7 +14,7 @@ class CertCVE:
         self.new_cves = new_cves
 
     def fetch_cves(self):
-        root: dict = requests.get(Constants.cert_cve_url).json()
+        root: dict = requests.get(Constants.CERT_CVE_URL).json()
 
         for child in root["content"]:
             if len(child["cves"]) == 0: continue

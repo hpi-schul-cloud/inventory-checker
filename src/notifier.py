@@ -16,7 +16,7 @@ class Notifier:
         self.notify_rocketchat()
 
     def notify_rocketchat(self):
-        msg = f"Found {len(self.new_cves)} new CVE's within last {Constants.interval.days} days:"
+        msg = f"Found {len(self.new_cves)} new CVE's within last {Constants.INTERVAL.days} days:"
         attachments = []
 
         for cve in self.new_cves.values():

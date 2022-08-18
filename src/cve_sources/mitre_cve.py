@@ -17,7 +17,7 @@ class MitreCVE:
         self.new_cves = new_cves
 
     def fetch_cves(self):
-        response = requests.get(Constants.mitre_cve_url)
+        response = requests.get(Constants.MITRE_CVE_URL)
         root = ET.fromstring(response.content)
         namespace = self.namespace(root)
 

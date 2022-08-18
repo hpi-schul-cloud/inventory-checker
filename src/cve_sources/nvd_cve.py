@@ -25,7 +25,7 @@ class NvdCVE:
             + "%20UTC%2B00:00"
         )
         root: dict = requests.get(
-            Constants.nvd_cve_url + startDate + endDate + "&resultsPerPage=2000"
+            Constants.NVD_CVE_URL + startDate + endDate + "&resultsPerPage=2000"
         ).json()
 
         for child in root["result"]["CVE_Items"]:
