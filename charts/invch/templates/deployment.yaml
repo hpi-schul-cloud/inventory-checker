@@ -58,7 +58,7 @@ spec:
                 name: {{ include "invch.fullname" . }}
           {{- end }}
           volumeMounts:
-          - mountPath: /usr/src/app/src/json
+          - mountPath: /usr/src/app/src/cve_log
             name: {{ include "invch.fullname" . }}-vol
       volumes:
         - name: {{ include "invch.fullname" . }}-vol
