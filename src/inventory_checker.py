@@ -75,7 +75,7 @@ class InventoryChecker:
         for cve in new_cves.values():
             for versions in cve["affected_versions"]:
                 AFFECTED_PRODUCT_VERSIONS = Info('affected_product_versions_' + cve["name"].replace("-", "_") + versions.replace("-", "_").replace(".", "_"), 'The affected versions per product')
-                AFFECTED_PRODUCT_VERSIONS.info({"affected_product":"True", "cve": cve["name"], "product": cve["keyword"], "versions": versions})
+                AFFECTED_PRODUCT_VERSIONS.info({"affected_product":"True", "cve": cve["name"], "product": cve["keyword"], "severity": cve["severity"], "versions": versions})
 
             match cve["severity"]:
                 case "critical":
