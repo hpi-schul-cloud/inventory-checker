@@ -144,6 +144,10 @@ class InventoryChecker:
         new_cves = {}
 
         for cve in cve_list:
+            for versions in cve["versions"]:
+                AFFECTED_PRODUCT_VERSIONS = Info('affected_product_versions_' + cve["name"].replace("-", "_") + versions.replace("-", "_").replace(".", "_"), 'The affected versions per product')
+                AFFECTED_PRODUCT_VERSIONS.clear()
+                
             if datetime.strptime(cve["date"], "%d.%m.%Y").timestamp() >= start_date.timestamp():
                 new_cves[cve["name"]] = cve
 
@@ -174,7 +178,7 @@ if __name__ == "__main__":
         logging.info("Starting prometheus on port " + str(Constants.PROMETHEUS_PORT) + "...")
         start_http_server(Constants.PROMETHEUS_PORT)
 
-        schedule.every(Constants.SCHEDULER_INTERVAL).seconds.do(InventoryChecker().run)
+        schedule.every(Constants.SCHEDULER_INTERVAL).minutes.do(InventoryChecker().run)
         schedule.run_all()
         
         while True:

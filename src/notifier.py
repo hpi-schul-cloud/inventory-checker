@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 from hashlib import new
+from operator import concat
 
 import requests
 
@@ -25,12 +26,22 @@ class Notifier:
             name: str = cve["name"]
             title: str = f"{date} | {keyword} - {name}"
 
+            color = "warning"
+
+            if cve["severity"] == "critical" or cve["severity"] == "high":
+                color = "danger"
+
             attachments.append(
                 {
                     "title": title,
                     "title_link": cve["url"],
                     "text": cve["description"],
-                    "color": "danger",
+                    "color": color,
+                    "collapsed": True,
+                    "fields": [{
+                        "title": "Affected versions:",
+                        "value": "???" if len(cve["affected_versions"]) == 0 else ", ".join(cve["affected_versions"])
+                    }]
                 }
             )
 

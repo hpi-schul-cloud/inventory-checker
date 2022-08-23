@@ -5,7 +5,7 @@ class Constants:
     CVE_DIR_PATH = "src/cve_log"
     CVE_FILE_PATH = CVE_DIR_PATH + "/cves.json"
     INTERVAL = timedelta(days=30)
-    SCHEDULER_INTERVAL = 1000 * 60 * 60
+    SCHEDULER_INTERVAL = 60
     INVENTORY_FILE_PATH = "src/json/inventory_list.json"
     PROMETHEUS_PORT = 9000
     ROCKETCHAT_WEBHOOK = None
