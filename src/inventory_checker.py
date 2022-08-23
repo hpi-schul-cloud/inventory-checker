@@ -4,7 +4,7 @@ import os
 import sys
 import time
 from datetime import datetime, timedelta, timezone
-from operator import contains
+from pathlib import Path
 
 import schedule
 from dotenv import load_dotenv
@@ -130,6 +130,9 @@ class InventoryChecker:
         return json.loads(s)
 
     def save_cves(self, saved_cves, cves):
+        if not exists(Constants.CVE_DIR_PATH):
+            Path(Constants.CVE_DIR_PATH).mkdir(parents=True, exist_ok=True)
+            
         file = open(Constants.CVE_FILE_PATH, "w")
         saved_cves.update(cves)
         file.write(json.dumps(saved_cves))
