@@ -57,6 +57,13 @@ spec:
             - secretRef:
                 name: {{ include "invch.fullname" . }}
           {{- end }}
+          volumeMounts:
+          - mountPath: /usr/src/app/src/json
+            name: {{ include "invch.fullname" . }}-vol
+      volumes:
+        - name: {{ include "invch.fullname" . }}-vol
+          persistentVolumeClaim:
+            claimName: {{ include "invch.fullname" . }}-pvc
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
