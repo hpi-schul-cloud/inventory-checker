@@ -4,11 +4,12 @@ import os
 import sys
 import time
 from datetime import datetime, timedelta, timezone
+from operator import contains
 
 import schedule
 from dotenv import load_dotenv
 from genericpath import exists
-from prometheus_client import Gauge, Summary, start_http_server
+from prometheus_client import Gauge, Info, Summary, start_http_server
 
 from constants import Constants
 from cve_sources.cert_cve import CertCVE
@@ -17,7 +18,7 @@ from cve_sources.nvd_cve import NvdCVE
 from cve_sources.vuldb_cve import VuldbCVE
 from notifier import Notifier
 
-CVE_GAUGE = Gauge("cves_total", "This is the count of the current cve's")
+
 class InventoryChecker:
     REQUEST_TIME = Summary('request_processing_seconds', 'Time spent processing request')
 
@@ -63,7 +64,28 @@ class InventoryChecker:
         self.save_cves(saved_cves, new_cves)
         new_cve_size = len(new_cves)
 
+        CVE_GAUGE = Gauge("cves_total", "This is the count of the current cve's")
         CVE_GAUGE.set(new_cve_size)
+
+        CVE_CRITICAL_SEVERITY_GAUGE = Gauge("cves_critical", "This is the count of the current cve's which have a critical severity")
+        CVE_HIGH_SEVERITY_GAUGE = Gauge("cves_high", "This is the count of the current cve's which have a high severity")
+        CVE_MEDIUM_SEVERITY_GAUGE = Gauge("cves_medium", "This is the count of the current cve's which have a medium severity")
+        CVE_UNKOWN_SEVERITY_GAUGE = Gauge("cves_unknown", "This is the count of the current cve's which have an unknown severity")
+        
+        for cve in new_cves.values():
+            for versions in cve["affected_versions"]:
+                AFFECTED_PRODUCT_VERSIONS = Info('affected_product_versions_' + cve["name"].replace("-", "_") + versions.replace("-", "_").replace(".", "_"), 'The affected versions per product')
+                AFFECTED_PRODUCT_VERSIONS.info({"affected_product":"True", "cve": cve["name"], "product": cve["keyword"], "versions": versions})
+
+            match cve["severity"]:
+                case "critical":
+                    CVE_CRITICAL_SEVERITY_GAUGE.inc()
+                case "high":
+                    CVE_HIGH_SEVERITY_GAUGE.inc()
+                case "medium":
+                    CVE_MEDIUM_SEVERITY_GAUGE.inc()
+                case "unknown":
+                    CVE_UNKOWN_SEVERITY_GAUGE.inc()
 
         if new_cve_size == 0:
             logging.info(f"No new CVE's within last {Constants.INTERVAL.days} days")
