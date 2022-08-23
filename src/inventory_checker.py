@@ -144,7 +144,7 @@ class InventoryChecker:
         new_cves = {}
 
         for cve in cve_list:
-            for versions in cve["versions"]:
+            for versions in cve["affected_versions"]:
                 AFFECTED_PRODUCT_VERSIONS = Info('affected_product_versions_' + cve["name"].replace("-", "_") + versions.replace("-", "_").replace(".", "_"), 'The affected versions per product')
                 AFFECTED_PRODUCT_VERSIONS.clear()
                 
