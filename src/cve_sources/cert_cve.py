@@ -45,6 +45,7 @@ class CertCVE:
 
                 exit: bool = False
                 for cve in child["cves"]:
+                    # Replace severity of cve's that have an unknown severity
                     if contains(self.saved_cves.keys(), cve) or contains(
                         self.new_cves.keys(), cve
                     ):

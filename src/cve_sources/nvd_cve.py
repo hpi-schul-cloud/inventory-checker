@@ -61,6 +61,7 @@ class NvdCVE:
                 if impact_data["baseMetricV3"] != None:
                     severity = SeverityUtil.getUniformSeverity(impact_data["baseMetricV3"]["cvssV3"]["baseSeverity"])
 
+                # Replace severity and affected products of cve's that have an unknown severity or empty []
                 if contains(self.saved_cves.keys(), name) or contains(
                 self.new_cves.keys(), name
                 ):

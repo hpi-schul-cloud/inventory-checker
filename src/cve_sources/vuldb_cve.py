@@ -55,6 +55,7 @@ class VuldbCVE:
                 if severity_data != None:
                     severity = SeverityUtil.getUniformSeverity(severity_data.replace("Risk: ", ""))
 
+                # Replace severity of cve's that have an unknown severity
                 if contains(self.saved_cves.keys(), name) or contains(
                 self.new_cves.keys(), name
                 ):

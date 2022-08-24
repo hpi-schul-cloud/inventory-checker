@@ -1,5 +1,6 @@
 class SeverityUtil:
     def getUniformSeverity(severityToTransform: str):
+        # different sources have different namings for the same thing
         match severityToTransform:
             case "CRITICAL" | "very critical" | "kritisch":
                 return "critical"
