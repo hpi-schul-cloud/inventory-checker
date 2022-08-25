@@ -7,13 +7,6 @@ from utils.severity_util import SeverityUtil
 
 
 class NvdCVE:
-    def __init__(self, saved_cves: dict, now: datetime, start_date: datetime, inventory: list, new_cves: dict):
-        self.saved_cves = saved_cves
-        self.now = now
-        self.start_date = start_date
-        self.inventory = inventory
-        self.new_cves = new_cves
-
     def fetch_cves(self):
         startDate: str = (
             "?pubStartDate="
@@ -56,9 +49,9 @@ class NvdCVE:
                 impact_data: list = child["impact"]
                 severity = "unknown"
 
-                versions = self.retrieve_versions(child["configurations"]["nodes"])
+                versions = NvdCVE.retrieve_versions(child["configurations"]["nodes"])
 
-                if impact_data["baseMetricV3"] != None:
+                if contains(impact_data.keys(), "baseMetricV3"):
                     severity = SeverityUtil.getUniformSeverity(impact_data["baseMetricV3"]["cvssV3"]["baseSeverity"])
 
                 # Replace severity and affected products of cve's that have an unknown severity or empty []
@@ -82,14 +75,12 @@ class NvdCVE:
                     "affected_versions": versions,
                 }
 
-        return self.new_cves
-
-    def retrieve_versions(self, child):
+    def retrieve_versions(child):
         versions = []
 
         for node_data in child:
             if node_data["operator"] == "AND":
-                self.retrieve_versions(node_data["children"])
+                NvdCVE.retrieve_versions(node_data["children"])
 
             if node_data["operator"] == "OR":
                 for version_data in node_data["cpe_match"]:

@@ -10,13 +10,6 @@ from utils.severity_util import SeverityUtil
 
 
 class VuldbCVE:
-    def __init__(self, saved_cves: dict, now: datetime, start_date: datetime, inventory: list, new_cves: dict):
-        self.saved_cves = saved_cves
-        self.now = now
-        self.start_date = start_date
-        self.inventory = inventory
-        self.new_cves = new_cves
-
     def fetch_cves(self):
         response = requests.get(Constants.VULDB_CVE_URL)
         root = ET.fromstring(response.content)
@@ -72,5 +65,3 @@ class VuldbCVE:
                     "severity": severity,
                     "affected_versions": [],
                 }
-
-        return self.new_cves

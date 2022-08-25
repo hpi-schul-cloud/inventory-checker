@@ -6,13 +6,6 @@ from constants import Constants
 
 
 class CisaCVE:
-    def __init__(self, saved_cves: dict, now: datetime, start_date: datetime, inventory: list, new_cves: dict):
-        self.saved_cves = saved_cves
-        self.now = now
-        self.start_date = start_date
-        self.inventory = inventory
-        self.new_cves = new_cves
-
     def fetch_cves(self):
         root: dict = requests.get(Constants.CISA_CVE_URL).json()
 
@@ -53,5 +46,3 @@ class CisaCVE:
                     "severity": "unknown",
                     "affected_versions": [],
                 }
-
-        return self.new_cves

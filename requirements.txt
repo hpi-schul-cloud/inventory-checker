@@ -1,4 +1,6 @@
 requests
 python-dotenv
 schedule
-prometheus-client==0.13.1
+prometheus-client
+python-dxf
+jira
