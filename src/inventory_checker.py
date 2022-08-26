@@ -77,6 +77,7 @@ class InventoryChecker:
                 logging.warning(f"{cve}")
                 print()
 
+            logging.info("Posting new CVE's...")
             Notifier.post_cve(self.new_cves)
             Notifier.create_jira_issues(self.new_cves)
 

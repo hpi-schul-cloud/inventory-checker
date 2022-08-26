@@ -52,6 +52,6 @@ class Notifier:
 
         for cve in new_cves.values():
             title = cve["name"]
-            description = cve["description"]
+            description = cve["description"] + "\n" + cve["url"]
 
             jira.create_issue(project=Constants.JIRA_PROJECT_ID, summary=title, description=description, issuetype={"name": Constants.JIRA_ISSUE_TYPE}, priority={"name": Constants.JIRA_PRIORITY})

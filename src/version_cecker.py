@@ -51,7 +51,10 @@ class VersionChecker:
                 messages.append(message)
                 logging.warning(message)
 
+        logging.info("Found " + len(messages) + " version mismatches or issues!")
+
         if len(messages) != 0:
+            logging.info("Posting version info message...")
             data = {
                 "text": "Version Check",
                 "attachments": list(map(lambda message: {"title": message, "color": "warning"}, messages)),
