@@ -42,6 +42,9 @@ class InventoryChecker:
         logging.info("Cleaning old CVE's...")
         FileUtil.clean_old_cves(self)
 
+        logging.info("Cleaning old Versions's...")
+        FileUtil.clean_old_versions(self)
+
         print()
         logging.info(f"Looking for: {self.inventory}")
         logging.info(f"within last {Constants.INTERVAL.days} days")
@@ -169,9 +172,7 @@ if __name__ == "__main__":
             )
 
         if os.getenv("REPO_CREDENTIALS"):
-            Constants.REPO_CREDENTIALS = json.JSONDecoder.decode(
-                os.getenv("REPO_CREDENTIALS")
-            )
+            Constants.REPO_CREDENTIALS = json.loads(os.getenv("REPO_CREDENTIALS"))
 
         if os.getenv("JIRA_ISSUE_TYPE"):
             Constants.JIRA_ISSUE_TYPE = os.getenv("JIRA_ISSUE_TYPE")

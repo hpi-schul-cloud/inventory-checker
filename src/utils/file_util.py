@@ -25,6 +25,19 @@ class FileUtil:
 
         return json.loads(s)
 
+    def load_versions(self):
+        if not exists(Constants.VERSION_FILE_PATH):
+            return {}
+
+        file = open(Constants.VERSION_FILE_PATH)
+        s = file.read()
+        file.close()
+
+        if s == "":
+            return []
+
+        return json.loads(s)
+
     def create_log_dir(self):
         if not exists(Constants.LOG_DIR_PATH):
             Path(Constants.LOG_DIR_PATH).mkdir(parents=True, exist_ok=True)
@@ -33,6 +46,12 @@ class FileUtil:
         file = open(Constants.CVE_FILE_PATH, "w")
         self.saved_cves.update(self.new_cves)
         file.write(json.dumps(self.saved_cves))
+        file.close()
+
+    def save_versions(self):
+        file = open(Constants.VERSION_FILE_PATH, "w")
+        self.saved_versions = self.saved_versions + self.new_versions
+        file.write(json.dumps(self.saved_versions))
         file.close()
 
     def clean_old_cves(self):
@@ -60,3 +79,20 @@ class FileUtil:
         FileUtil.save_cves(self)
 
         logging.info(f"Cleaned {len(cve_list) - len(self.new_cves)} CVE's!")
+
+    def clean_old_versions(self):
+        version_list = FileUtil.load_versions(self)
+
+        self.new_versions = []
+
+        for version in version_list:
+            if (
+                datetime.strptime(version["date"], "%d.%m.%Y").timestamp()
+                >= self.start_date.timestamp()
+            ):
+                 self.new_versions.append(version)
+
+        self.saved_versions = []
+        FileUtil.save_versions(self)
+
+        logging.info(f"Cleaned {len(version_list) - len(self.new_versions)} Versions!")

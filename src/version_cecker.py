@@ -6,22 +6,25 @@ from dxf import DXF, exceptions
 
 from constants import Constants
 from notifier import Notifier
+from utils.file_util import FileUtil
 
 
 class VersionChecker:
     def check_versions(self):
+        # Load old Versions for no duplications
+        self.saved_versions = FileUtil.load_versions(self)
         messages = []
 
         for image_full in self.images:
-            repo = image_full[: image_full.find("/")]
-            image_nr = image_full.removeprefix(repo + "/")
+            host = image_full[: image_full.find("/")]
+            image_nr = image_full.removeprefix(host + "/")
             image = image_nr.split(":")[0]
             tag = image_nr.split(":")[1]
 
-            if repo == "docker.io":
-                repo = "registry-1.docker.io"
+            if host == "docker.io":
+                host = "registry-1.docker.io"
 
-            registry = DXF(repo, image, auth)
+            registry = DXF(host, image, auth)
 
             currentHash = None
             latestHash = None
@@ -29,7 +32,10 @@ class VersionChecker:
             try:
                 currentHash = registry._get_dcd(tag)
             except exceptions.DXFUnauthorizedError:
-                message = 'Credentials for repo "' + repo + '" are missing!'
+                message = 'Credentials for repo "' + host + '" are missing or are wrong!'
+                if VersionChecker.containsMessage(self, message):
+                    continue
+
                 messages.append(message)
                 logging.warning(message)
                 continue
@@ -41,6 +47,9 @@ class VersionChecker:
                     latestHash = registry._get_dcd("main")
             except requests.exceptions.HTTPError:
                 message = "Latest tag not found for: " + image_full
+                if VersionChecker.containsMessage(self, message):
+                    continue
+
                 messages.append(message)
                 logging.warning(message)
 
@@ -48,10 +57,13 @@ class VersionChecker:
 
             if not isNewest:
                 message = image_nr + " has a newer version!"
+                if VersionChecker.containsMessage(self, message):
+                    continue
+
                 messages.append(message)
                 logging.warning(message)
 
-        logging.info("Found " + len(messages) + " version mismatches or issues!")
+        logging.info("Found " + str(len(messages)) + " version mismatches or issues!")
 
         if len(messages) != 0:
             logging.info("Posting version info message...")
@@ -61,10 +73,21 @@ class VersionChecker:
             }
             Notifier.post_message(data)
 
+            self.new_versions = list(map(lambda message: {"message": message, "date": self.now.strftime("%d.%m.%Y")}, messages))
+            FileUtil.save_versions(self)
+
+    
+    def containsMessage(self, message):
+        for version in self.saved_versions:
+            if version["message"] == message:
+                return True
+        
+        return False
+
 
 def auth(dxf: DXF, response):
-    if contains(Constants.REPO_CREDENTIALS.keys(), dxf._repo):
-        credential = Constants.REPO_CREDENTIALS.get(dxf._repo)
+    if contains(Constants.REPO_CREDENTIALS.keys(), dxf._host):
+        credential = Constants.REPO_CREDENTIALS.get(dxf._host)
         dxf.authenticate(
             credential["username"], credential["password"], response=response
         )
