@@ -34,7 +34,7 @@ class VersionChecker:
                     currentHash = registry._get_dcd(tag)
                 except exceptions.DXFUnauthorizedError:
                     message = 'Credentials for repo "' + host + '" are missing or are wrong!'
-                    if VersionChecker.containsMessage(self, message):
+                    if VersionChecker.containsMessage(self, message) or contains(messages, message):
                         continue
 
                     messages.append(message)
@@ -42,7 +42,7 @@ class VersionChecker:
                     continue
             except requests.exceptions.HTTPError:
                 message = "Current tag not found for: " + image_full
-                if VersionChecker.containsMessage(self, message):
+                if VersionChecker.containsMessage(self, message) or contains(messages, message):
                     continue
 
                 messages.append(message)
@@ -56,7 +56,7 @@ class VersionChecker:
                     latestHash = registry._get_dcd("main")
             except requests.exceptions.HTTPError:
                 message = "Latest tag not found for: " + image_full
-                if VersionChecker.containsMessage(self, message):
+                if VersionChecker.containsMessage(self, message) or contains(messages, message):
                     continue
 
                 messages.append(message)
@@ -66,7 +66,7 @@ class VersionChecker:
 
             if not isNewest:
                 message = image_nr + " has a newer version!"
-                if VersionChecker.containsMessage(self, message):
+                if VersionChecker.containsMessage(self, message) or contains(messages, message):
                     continue
 
                 messages.append(message)
