@@ -30,9 +30,18 @@ class VersionChecker:
             latestHash = None
 
             try:
-                currentHash = registry._get_dcd(tag)
-            except exceptions.DXFUnauthorizedError:
-                message = 'Credentials for repo "' + host + '" are missing or are wrong!'
+                try:
+                    currentHash = registry._get_dcd(tag)
+                except exceptions.DXFUnauthorizedError:
+                    message = 'Credentials for repo "' + host + '" are missing or are wrong!'
+                    if VersionChecker.containsMessage(self, message):
+                        continue
+
+                    messages.append(message)
+                    logging.warning(message)
+                    continue
+            except requests.exceptions.HTTPError:
+                message = "Current tag not found for: " + image_full
                 if VersionChecker.containsMessage(self, message):
                     continue
 

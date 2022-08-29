@@ -17,7 +17,7 @@ from cve_sources.vuldb_cve import VuldbCVE
 from notifier import Notifier
 from utils.file_util import FileUtil
 from utils.grafana_fetcher import GrafanaFetcher
-from version_cecker import VersionChecker
+from version_checker import VersionChecker
 
 
 class InventoryChecker:
