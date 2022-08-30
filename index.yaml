@@ -2,6 +2,16 @@ apiVersion: v1
 entries:
   invch:
   - apiVersion: v2
+    appVersion: 1.0.15
+    created: "2022-08-30T11:02:53.135341706Z"
+    description: A Helm chart for Kubernetes
+    digest: 0575111187e7b980dbf43508e927605aa71d4dd7b599f0b02f810e43de750c34
+    name: invch
+    type: application
+    urls:
+    - https://github.com/hpi-schul-cloud/inventory-checker/releases/download/invch-1.0.15/invch-1.0.15.tgz
+    version: 1.0.15
+  - apiVersion: v2
     appVersion: 1.0.14
     created: "2022-08-30T10:53:35.778859999Z"
     description: A Helm chart for Kubernetes
@@ -151,4 +161,4 @@ entries:
     urls:
     - https://github.com/hpi-schul-cloud/inventory-checker/releases/download/invch-1.0.0/invch-1.0.0.tgz
     version: 1.0.0
-generated: "2022-08-30T10:53:35.778958899Z"
+generated: "2022-08-30T11:02:53.135518104Z"
