@@ -52,27 +52,37 @@ class NvdCVE:
                 severity = "unknown"
 
                 for key in self.inventory:
+                    if affected:
+                        break
+
                     keyword = key["keyword"]
                     if keyword.lower() in description.lower():
                         current_version: str = key["version"]
 
                         versions = NvdCVE.retrieve_versions(child["configurations"]["nodes"], keyword)
 
-                        for version in versions:
-                            version_start = version.split(" - ")[0]
-                            version_end = version.split(" - ")[1]
-                            
-                            if version_start == "":
-                                if semver.compare(current_version, version_end) <= 0:
-                                    affected = True
-                                    break
-                            elif version_end == "":
-                                if semver.compare(current_version, version_start) >= 0:
-                                    affected = True
-                                    break
-                            elif semver.compare(current_version, version_start) >= 0 and semver.compare(current_version, version_end) <= 0:
-                                    affected = True
-                                    break
+                        try:
+                            for version in versions:
+                                version_start = version.split(" - ")[0]
+                                version_end = version.split(" - ")[1]
+
+                                if version_start == "" and version_end == "":
+                                    continue
+                                
+                                if version_start == "":
+                                    if semver.compare(current_version, version_end) <= 0:
+                                        affected = True
+                                        break
+                                elif version_end == "":
+                                    if semver.compare(current_version, version_start) >= 0:
+                                        affected = True
+                                        break
+                                elif semver.compare(current_version, version_start) >= 0 and semver.compare(current_version, version_end) <= 0:
+                                        affected = True
+                                        break
+                        except ValueError:
+                            affected = True # Manual check if version is affected is required
+                            break
                         
                 if not affected:
                     if contains(self.new_cves.keys(), name):
