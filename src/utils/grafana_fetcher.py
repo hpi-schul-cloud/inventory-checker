@@ -55,9 +55,11 @@ class GrafanaFetcher:
 
             image_splitted = image.split("/")
 
-            if not contains(list(map(lambda e: e["keyword"], keywords)), image_splitted[1]):
+            keyword = image_splitted[1] if len(image_splitted) == 2 else image_splitted[0]
+
+            if not contains(list(map(lambda e: e["keyword"], keywords)), keyword):
                 keywords.append({
-                    "keyword": image_splitted[1],
+                    "keyword": keyword,
                     "version": image_version
                 })
 
