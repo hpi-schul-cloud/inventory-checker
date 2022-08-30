@@ -62,7 +62,7 @@ class VersionChecker:
                 messages.append(message)
                 logging.warning(message)
 
-            isNewest = currentHash == latestHash
+            isNewest = currentHash == latestHash if currentHash != None and latestHash != None else True
 
             if not isNewest:
                 message = image_nr + " has a newer version!"
