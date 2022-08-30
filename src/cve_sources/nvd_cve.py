@@ -66,13 +66,11 @@ class NvdCVE:
                                 if semver.compare(current_version, version_end) <= 0:
                                     affected = True
                                     break
-
-                            if version_end == "":
+                            elif version_end == "":
                                 if semver.compare(current_version, version_start) >= 0:
                                     affected = True
                                     break
-
-                            if semver.compare(current_version, version_start) >= 0 and semver.compare(current_version, version_end) <= 0:
+                            elif semver.compare(current_version, version_start) >= 0 and semver.compare(current_version, version_end) <= 0:
                                     affected = True
                                     break
                         
