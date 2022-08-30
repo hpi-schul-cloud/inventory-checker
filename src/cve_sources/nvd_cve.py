@@ -110,7 +110,7 @@ class NvdCVE:
 
         for node_data in child:
             if node_data["operator"] == "AND":
-                NvdCVE.retrieve_versions(node_data["children"])
+                NvdCVE.retrieve_versions(node_data["children"], keyword)
 
             if node_data["operator"] == "OR":
                 for version_data in node_data["cpe_match"]:
