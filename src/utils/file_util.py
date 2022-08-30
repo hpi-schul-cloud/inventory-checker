@@ -1,19 +1,16 @@
 import json
 import logging
 from datetime import datetime
-from operator import contains
 from pathlib import Path
 
 from constants import Constants
 from genericpath import exists
-from prometheus_client import Info
-
-from utils.grafana_fetcher import GrafanaFetcher
 
 
 class FileUtil:
     def load_cves(self):
         if not exists(Constants.CVE_FILE_PATH):
+            self.first_time = True
             return {}
 
         file = open(Constants.CVE_FILE_PATH)
@@ -60,15 +57,6 @@ class FileUtil:
         self.new_cves = {}
 
         for cve in cve_list:
-            for versions in cve["affected_versions"]:
-                AFFECTED_PRODUCT_VERSIONS = Info(
-                    "affected_product_versions_"
-                    + cve["name"].replace("-", "_")
-                    + versions.replace("-", "_").replace(".", "_"),
-                    "The affected versions per product",
-                )
-                AFFECTED_PRODUCT_VERSIONS.clear()
-
             if (
                 datetime.strptime(cve["date"], "%d.%m.%Y").timestamp()
                 >= self.start_date.timestamp()

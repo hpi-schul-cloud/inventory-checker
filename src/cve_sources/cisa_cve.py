@@ -30,9 +30,9 @@ class CisaCVE:
 
             keyword: bool = next(
                 (
-                    key.lower()
+                    key
                     for key in self.inventory
-                    if key in product or key in vendor_project
+                    if key["keyword"].lower() in product or key["keyword"].lower() in vendor_project
                 ),
                 False,
             )

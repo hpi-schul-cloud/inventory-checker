@@ -4,10 +4,11 @@ import os
 import sys
 import time
 from datetime import datetime, timedelta, timezone
+from operator import contains
 
 import schedule
 from dotenv import load_dotenv
-from prometheus_client import Gauge, Info, Summary, start_http_server
+from prometheus_client import REGISTRY, Gauge, Info, Summary, start_http_server
 
 from constants import Constants
 from cve_sources.cert_cve import CertCVE
@@ -45,6 +46,8 @@ class InventoryChecker:
         logging.info("Cleaning old Versions's...")
         FileUtil.clean_old_versions(self)
 
+        self.clear_prometheus()
+
         print()
         logging.info(f"Looking for: {self.inventory}")
         logging.info(f"within last {Constants.INTERVAL.days} days")
@@ -65,25 +68,33 @@ class InventoryChecker:
         FileUtil.save_cves(self)
         new_cve_size = len(self.new_cves)
 
-        self.update_prometheus(new_cve_size)
+        # Don't post new cve's because it would spam quiet a lot
+        if not hasattr(self, "first_time"):
+            self.update_prometheus(new_cve_size)
 
-        if new_cve_size == 0:
-            logging.info(f"No new CVE's within last {Constants.INTERVAL.days} days")
-            print()
-            print("~~~~~~~~~~~~~~~~~~~~~~~")
-            print()
-        else:
-            logging.warning(
-                f"{new_cve_size} new CVE's within last {Constants.INTERVAL.days} days"
-            )
-            for cve in self.new_cves.values():
-                logging.warning(f"{cve}")
+            if new_cve_size == 0:
+                logging.info(f"No new CVE's within last {Constants.INTERVAL.days} days")
                 print()
+                print("~~~~~~~~~~~~~~~~~~~~~~~")
+                print()
+            else:
+                logging.warning(
+                    f"{new_cve_size} new CVE's within last {Constants.INTERVAL.days} days"
+                )
+                for cve in self.new_cves.values():
+                    logging.warning(f"{cve}")
+                    print()
 
-            logging.info("Posting new CVE's...")
-            Notifier.post_cve(self.new_cves)
-            Notifier.create_jira_issues(self.new_cves)
+                logging.info("Posting new CVE's...")
+                Notifier.post_cve(self.new_cves)
+                Notifier.create_jira_issues(self.new_cves)
+                
+                print("~~~~~~~~~~~~~~~~~~~~~~~")
+                print()
+        else:
+            logging.info("Skipping because it's the first time starting up...")
 
+            print()
             print("~~~~~~~~~~~~~~~~~~~~~~~")
             print()
 
@@ -93,6 +104,17 @@ class InventoryChecker:
         print()
         print("=======================")
         print()
+
+    def clear_prometheus(self):
+        cleared = []
+
+        names = list(REGISTRY._names_to_collectors.keys())
+        for name in names:
+            if name.startswith("affected_product_versions_") or name.startswith("cve"):
+                collector = REGISTRY._names_to_collectors.get(name)
+                if not contains(cleared, collector):
+                    cleared.append(collector)
+                    REGISTRY.unregister(collector)
 
     def update_prometheus(self, new_cve_size):
         CVE_GAUGE = Gauge("cves_total", "This is the count of the current cve's")

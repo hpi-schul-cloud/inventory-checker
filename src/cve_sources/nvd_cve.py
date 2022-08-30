@@ -2,6 +2,7 @@ from datetime import datetime
 from operator import contains
 
 import requests
+import semver
 from constants import Constants
 from utils.severity_util import SeverityUtil
 
@@ -39,17 +40,46 @@ class NvdCVE:
 
             keyword: bool = next(
                 (
-                    key.lower()
+                    key
                     for key in self.inventory
-                    if key in description.lower()
+                    if key["keyword"].lower() in description.lower()
                 ),
                 False,
             )
             if keyword:
+                affected = False
                 impact_data: list = child["impact"]
                 severity = "unknown"
 
-                versions = NvdCVE.retrieve_versions(child["configurations"]["nodes"])
+                for key in self.inventory:
+                    keyword = key["keyword"]
+                    if keyword.lower() in description.lower():
+                        current_version: str = key["version"]
+
+                        versions = NvdCVE.retrieve_versions(child["configurations"]["nodes"], keyword)
+
+                        for version in versions:
+                            version_start = version.split(" - ")[0]
+                            version_end = version.split(" - ")[1]
+                            
+                            if version_start == "":
+                                if semver.compare(current_version, version_end) <= 0:
+                                    affected = True
+                                    break
+
+                            if version_end == "":
+                                if semver.compare(current_version, version_start) >= 0:
+                                    affected = True
+                                    break
+
+                            if semver.compare(current_version, version_start) >= 0 and semver.compare(current_version, version_end) <= 0:
+                                    affected = True
+                                    break
+                        
+                if not affected:
+                    if contains(self.new_cves.keys(), name):
+                        del self.new_cves[name]
+                    continue
 
                 if contains(impact_data.keys(), "baseMetricV3"):
                     severity = SeverityUtil.getUniformSeverity(impact_data["baseMetricV3"]["cvssV3"]["baseSeverity"])
@@ -75,7 +105,7 @@ class NvdCVE:
                     "affected_versions": versions,
                 }
 
-    def retrieve_versions(child):
+    def retrieve_versions(child, keyword):
         versions = []
 
         for node_data in child:
@@ -86,6 +116,9 @@ class NvdCVE:
                 for version_data in node_data["cpe_match"]:
                     start = ""
                     end = ""
+
+                    if not contains(version_data.get("cpe23Uri").lower(), keyword.lower()):
+                        continue
                     
                     if version_data.get("versionStartIncluding"):
                         start = version_data["versionStartIncluding"]
@@ -96,7 +129,7 @@ class NvdCVE:
                     if start == "" and end == "":
                         continue
 
-                    version = start + "-" + end
+                    version = start + " - " + end
 
                     if not contains(versions, version):
                         versions.append(version)

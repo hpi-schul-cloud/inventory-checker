@@ -24,9 +24,9 @@ class CertCVE:
 
             keyword: bool = next(
                 (
-                    key.lower()
+                    key
                     for key in self.inventory
-                    if key in description.lower()
+                    if key["keyword"].lower() in description.lower()
                 ),
                 False,
             )

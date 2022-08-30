@@ -51,11 +51,14 @@ class GrafanaFetcher:
             repo = image_full[: image_full.find("/")]
             image_nr = image_full.removeprefix(repo + "/")
             image = image_nr.split(":")[0]
+            image_version = image_nr.split(":")[1]
 
             image_splitted = image.split("/")
 
-            for split_image in image_splitted:
-                if not contains(keywords, split_image):
-                    keywords.append(split_image)
+            if not contains(list(map(lambda e: e["keyword"], keywords)), image_splitted[1]):
+                keywords.append({
+                    "keyword": image_splitted[1],
+                    "version": image_version
+                })
 
         return keywords
