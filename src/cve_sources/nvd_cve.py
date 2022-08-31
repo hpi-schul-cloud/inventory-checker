@@ -55,11 +55,11 @@ class NvdCVE:
                     if affected:
                         break
 
-                    keyword = key["keyword"]
-                    if keyword.lower() in description.lower():
+                    keyword = key
+                    if keyword["keyword"].lower() in description.lower():
                         current_version: str = key["version"]
 
-                        versions = NvdCVE.retrieve_versions(child["configurations"]["nodes"], keyword)
+                        versions = NvdCVE.retrieve_versions(child["configurations"]["nodes"], keyword["keyword"])
 
                         try:
                             for version in versions:
@@ -107,7 +107,7 @@ class NvdCVE:
                     "name": name,
                     "url": f"https://nvd.nist.gov/vuln/detail/{name}",
                     "date": date_converted.strftime("%d.%m.%Y"),
-                    "keyword": keyword,
+                    "keyword": keyword["keyword"].lower(),
                     "description": description,
                     "severity": severity,
                     "affected_versions": versions,

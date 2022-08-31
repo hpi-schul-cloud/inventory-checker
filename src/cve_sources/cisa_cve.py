@@ -41,7 +41,7 @@ class CisaCVE:
                     "name": name,
                     "url": f"https://nvd.nist.gov/vuln/detail/{name}",
                     "date": date_converted.strftime("%d.%m.%Y"),
-                    "keyword": keyword,
+                    "keyword": keyword["keyword"].lower(),
                     "description": description,
                     "severity": "unknown",
                     "affected_versions": [],

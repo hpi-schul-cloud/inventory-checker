@@ -60,7 +60,7 @@ class VuldbCVE:
                     "name": name,
                     "url": url,
                     "date": date_converted.strftime("%d.%m.%Y"),
-                    "keyword": keyword,
+                    "keyword": keyword["keyword"].lower(),
                     "description": description,
                     "severity": severity,
                     "affected_versions": [],

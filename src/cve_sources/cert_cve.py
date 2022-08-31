@@ -53,7 +53,7 @@ class CertCVE:
                     "name": name,
                     "url": f"https://wid.cert-bund.de/portal/wid/securityadvisory?name={child['name']}",
                     "date": date_converted.strftime("%d.%m.%Y"),
-                    "keyword": keyword,
+                    "keyword": keyword["keyword"].lower(),
                     "description": description,
                     "severity": severity,
                     "affected_versions": [],
