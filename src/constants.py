@@ -14,12 +14,18 @@ class Constants:
     GRAFANA_TOKEN = ""
     GRAFANA_HOST = ""
     GRAFANA_PROMETHEUS_UID=""
-    JIRA_HOST=""
-    JIRA_TOKEN=""
-    JIRA_PROJECT_ID=""
+    JIRA_HOST=None
+    JIRA_TOKEN=None
+    JIRA_PROJECT_ID=None
     JIRA_ISSUE_TYPE="Bug"
-    JIRA_USER=""
-    JIRA_PRIORITY="High"
+    JIRA_USER=None
+    JIRA_PRIORITY={
+        "critical": "Highest",
+        "high": "High",
+        "medium": "Medium",
+        "low": "Low",
+        "unknown": "Medium"
+    }
 
     # CVE Source URLs
     CISA_CVE_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"

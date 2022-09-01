@@ -1,0 +1,29 @@
+import logging
+from ast import Constant
+
+from constants import Constants
+from prometheus_client import Info, start_http_server
+
+
+class PrometheusUtil:
+    def init_prometheus():
+        logging.info(
+                "Starting prometheus on port " + str(Constants.PROMETHEUS_PORT) + "..."
+            )
+        start_http_server(Constants.PROMETHEUS_PORT)
+
+        INVCH_INFO = Info(
+                        "invch",
+                        "The InvCh ENV information",
+                    )
+        INVCH_INFO.info(
+            {
+                "prometheus_port": str(Constants.PROMETHEUS_PORT),
+                "scheduler_interval": str(Constants.SCHEDULER_INTERVAL),
+                "interval": str(Constants.INTERVAL.days),
+                "jira_project_id": "-" if Constants.JIRA_HOST == None else str(Constants.JIRA_PROJECT_ID),
+                "jira_issue_type": "-" if Constants.JIRA_HOST == None else str(Constants.JIRA_ISSUE_TYPE),
+                "jira_priority": "{}" if Constants.JIRA_HOST == None else str(Constants.JIRA_PRIORITY),
+                "uses_rocketchat": str(True) if Constants.ROCKETCHAT_WEBHOOK != None else str(False)
+            }
+        )

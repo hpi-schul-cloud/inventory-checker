@@ -47,6 +47,10 @@ class NvdCVE:
                 False,
             )
             if keyword:
+                if contains(self.saved_cves.keys(), name):
+                    if contains(self.saved_cves[name].keys(), "notAffected"):
+                        continue
+
                 affected = False
                 impact_data: list = child["impact"]
                 severity = "unknown"
@@ -87,6 +91,8 @@ class NvdCVE:
                 if not affected:
                     if contains(self.new_cves.keys(), name):
                         del self.new_cves[name]
+                    if contains(self.saved_cves.keys(), name):
+                        self.saved_cves[name]["notAffected"] = True
                     continue
 
                 if contains(impact_data.keys(), "baseMetricV3"):

@@ -11,6 +11,11 @@ from utils.file_util import FileUtil
 
 class VersionChecker:
     def check_versions(self):
+        logging.info("")
+        logging.info("~~~~~~~~~~~~~~~~~~~~~~~")
+        logging.info("")
+
+        logging.info("Checking for new versions...")
         # Load old Versions for no duplications
         self.saved_versions = FileUtil.load_versions(self)
         messages = []
@@ -18,8 +23,8 @@ class VersionChecker:
         for image_full in self.images:
             host = image_full[: image_full.find("/")]
             image_nr = image_full.removeprefix(host + "/")
-            image = image_nr.split(":")[0]
-            tag = image_nr.split(":")[1]
+            image = image_nr.split("@")[0] if contains(image_nr, "@") else image_nr.split(":")[0]
+            tag = image_nr.split("@")[1] if contains(image_nr, "@") else image_nr.split(":")[1]
 
             if host == "docker.io":
                 host = "registry-1.docker.io"
@@ -29,29 +34,41 @@ class VersionChecker:
             currentHash = None
             latestHash = None
 
-            try:
+            if tag.startswith("sha"):
+                currentHash = tag.split(":")[1]
+            else:
                 try:
-                    currentHash = registry._get_dcd(tag)
-                except exceptions.DXFUnauthorizedError:
-                    message = 'Credentials for repo "' + host + '" are missing or are wrong!'
+                    try:
+                        currentHash = registry._get_dcd(tag)
+                    except exceptions.DXFUnauthorizedError:
+                        message = 'Credentials for repo "' + host + '" are missing or are wrong!'
+                        if VersionChecker.containsMessage(self, message) or contains(messages, message):
+                            continue
+
+                        messages.append(message)
+                        logging.warning(message)
+                        continue
+                except requests.exceptions.HTTPError:
+                    message = "Current tag not found for: " + image_full
                     if VersionChecker.containsMessage(self, message) or contains(messages, message):
                         continue
 
                     messages.append(message)
                     logging.warning(message)
                     continue
-            except requests.exceptions.HTTPError:
-                message = "Current tag not found for: " + image_full
-                if VersionChecker.containsMessage(self, message) or contains(messages, message):
-                    continue
-
-                messages.append(message)
-                logging.warning(message)
-                continue
 
             try:
                 try:
-                    latestHash = registry._get_dcd("latest")
+                    try:
+                        latestHash = registry._get_dcd("latest")
+                    except exceptions.DXFUnauthorizedError:
+                        message = 'Credentials for repo "' + host + '" are missing or are wrong!'
+                        if VersionChecker.containsMessage(self, message) or contains(messages, message):
+                            continue
+
+                        messages.append(message)
+                        logging.warning(message)
+                        continue
                 except requests.exceptions.HTTPError:
                     latestHash = registry._get_dcd("main")
             except requests.exceptions.HTTPError:

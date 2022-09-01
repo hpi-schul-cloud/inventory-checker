@@ -31,6 +31,10 @@ class CertCVE:
                 False,
             )
             if keyword:
+                if contains(self.saved_cves.keys(), name):
+                    if contains(self.saved_cves[name].keys(), "notAffected"):
+                        continue
+
                 severity = "unknown"
 
                 if child["classification"] != None:

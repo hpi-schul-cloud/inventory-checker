@@ -1,3 +1,6 @@
+from constants import Constants
+
+
 class SeverityUtil:
     def getUniformSeverity(severityToTransform: str):
         # different sources have different namings for the same thing
@@ -14,3 +17,16 @@ class SeverityUtil:
                 return "unknown"
             case _:
                 return "none"
+
+    def transformSeverityToJiraPriority(severityToTransform: str):
+        match severityToTransform:
+            case "critical":
+                return Constants.JIRA_PRIORITY.get("critical")
+            case "high":
+                return Constants.JIRA_PRIORITY.get("high")
+            case "medium":
+                return Constants.JIRA_PRIORITY.get("medium")
+            case "low":
+                return Constants.JIRA_PRIORITY.get("low")
+            case _:
+                return Constants.JIRA_PRIORITY.get("unknown")

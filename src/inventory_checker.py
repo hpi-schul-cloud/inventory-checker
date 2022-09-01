@@ -8,7 +8,7 @@ from operator import contains
 
 import schedule
 from dotenv import load_dotenv
-from prometheus_client import REGISTRY, Gauge, Info, Summary, start_http_server
+from prometheus_client import REGISTRY, Gauge, Info, Summary
 
 from constants import Constants
 from cve_sources.cert_cve import CertCVE
@@ -18,6 +18,8 @@ from cve_sources.vuldb_cve import VuldbCVE
 from notifier import Notifier
 from utils.file_util import FileUtil
 from utils.grafana_fetcher import GrafanaFetcher
+from utils.jira_util import JiraUtil
+from utils.prometheus_util import PrometheusUtil
 from version_checker import VersionChecker
 
 
@@ -48,10 +50,10 @@ class InventoryChecker:
 
         self.clear_prometheus()
 
-        print()
+        logging.info("")
         logging.info(f"Looking for: {self.inventory}")
         logging.info(f"within last {Constants.INTERVAL.days} days")
-        print()
+        logging.info("")
 
         # Load old CVEs for no duplications
         self.saved_cves = FileUtil.load_cves(self)
@@ -64,46 +66,38 @@ class InventoryChecker:
         # Needs to be last to fetch versions of affected products
         NvdCVE.fetch_cves(self)
 
-        # save new cves
-        FileUtil.save_cves(self)
         new_cve_size = len(self.new_cves)
 
         # Don't post new cve's because it would spam quiet a lot
         if not hasattr(self, "first_time"):
-            self.update_prometheus(new_cve_size)
-
             if new_cve_size == 0:
                 logging.info(f"No new CVE's within last {Constants.INTERVAL.days} days")
-                print()
-                print("~~~~~~~~~~~~~~~~~~~~~~~")
-                print()
             else:
                 logging.warning(
                     f"{new_cve_size} new CVE's within last {Constants.INTERVAL.days} days"
                 )
                 for cve in self.new_cves.values():
                     logging.warning(f"{cve}")
-                    print()
+                    logging.info("")
 
                 logging.info("Posting new CVE's...")
                 Notifier.post_cve(self.new_cves)
-                Notifier.create_jira_issues(self.new_cves)
-                
-                print("~~~~~~~~~~~~~~~~~~~~~~~")
-                print()
+                JiraUtil.create_jira_issues(self)
         else:
             logging.info("Skipping because it's the first time starting up...")
 
-            print()
-            print("~~~~~~~~~~~~~~~~~~~~~~~")
-            print()
+        # save new cves
+        FileUtil.save_cves(self)
 
-        logging.info("Checking for new versions...")
+        JiraUtil.check_jira_issues(self)
+
+        self.update_prometheus()
+
         VersionChecker.check_versions(self)
 
-        print()
-        print("=======================")
-        print()
+        logging.info("")
+        logging.info("=======================")
+        logging.info("")
 
     def clear_prometheus(self):
         cleared = []
@@ -116,9 +110,8 @@ class InventoryChecker:
                     cleared.append(collector)
                     REGISTRY.unregister(collector)
 
-    def update_prometheus(self, new_cve_size):
+    def update_prometheus(self):
         CVE_GAUGE = Gauge("cves_total", "This is the count of the current cve's")
-        CVE_GAUGE.set(new_cve_size)
 
         CVE_CRITICAL_SEVERITY_GAUGE = Gauge(
             "cves_critical",
@@ -132,28 +125,54 @@ class InventoryChecker:
             "cves_medium",
             "This is the count of the current cve's which have a medium severity",
         )
+        CVE_LOW_SEVERITY_GAUGE = Gauge(
+            "cves_low",
+            "This is the count of the current cve's which have a low severity",
+        )
         CVE_UNKOWN_SEVERITY_GAUGE = Gauge(
             "cves_unknown",
             "This is the count of the current cve's which have an unknown severity",
         )
 
-        for cve in self.new_cves.values():
-            for versions in cve["affected_versions"]:
+        for cve in self.saved_cves.values():
+            if contains(cve.keys(), "notAffected"):
+                continue
+
+            if len(cve["affected_versions"]) == 0:
                 AFFECTED_PRODUCT_VERSIONS = Info(
-                    "affected_product_versions_"
-                    + cve["name"].replace("-", "_")
-                    + versions.replace("-", "_").replace(".", "_"),
-                    "The affected versions per product",
-                )
+                        "affected_product_versions_"
+                        + cve["name"].replace("-", "_")
+                        + "",
+                        "The affected versions per product",
+                    )
                 AFFECTED_PRODUCT_VERSIONS.info(
                     {
                         "affected_product": "True",
                         "cve": cve["name"],
                         "product": cve["keyword"],
                         "severity": cve["severity"],
-                        "versions": versions,
+                        "versions": "-1",
                     }
                 )
+            else:
+                for versions in cve["affected_versions"]:
+                    AFFECTED_PRODUCT_VERSIONS = Info(
+                        "affected_product_versions_"
+                        + cve["name"].replace("-", "_")
+                        + versions.replace("-", "_").replace(".", "_"),
+                        "The affected versions per product",
+                    )
+                    AFFECTED_PRODUCT_VERSIONS.info(
+                        {
+                            "affected_product": "True",
+                            "cve": cve["name"],
+                            "product": cve["keyword"],
+                            "severity": cve["severity"],
+                            "versions": versions,
+                        }
+                    )
+
+            CVE_GAUGE.inc()
 
             match cve["severity"]:
                 case "critical":
@@ -162,6 +181,8 @@ class InventoryChecker:
                     CVE_HIGH_SEVERITY_GAUGE.inc()
                 case "medium":
                     CVE_MEDIUM_SEVERITY_GAUGE.inc()
+                case "low":
+                    CVE_LOW_SEVERITY_GAUGE.inc()
                 case "unknown":
                     CVE_UNKOWN_SEVERITY_GAUGE.inc()
 
@@ -176,11 +197,9 @@ if __name__ == "__main__":
         Constants.GRAFANA_TOKEN = os.getenv("GRAFANA_TOKEN")
         Constants.GRAFANA_HOST = os.getenv("GRAFANA_HOST")
         Constants.GRAFANA_PROMETHEUS_UID = os.getenv("GRAFANA_PROMETHEUS_UID")
-        Constants.JIRA_HOST = os.getenv("JIRA_HOST")
-        Constants.JIRA_TOKEN = os.getenv("JIRA_TOKEN")
-        Constants.JIRA_PROJECT_ID = os.getenv("JIRA_PROJECT_ID")
-        Constants.JIRA_USER = os.getenv("JIRA_USER")
-        Constants.ROCKETCHAT_WEBHOOK = os.getenv("ROCKETCHAT_WEBHOOK")
+
+        if os.getenv("ROCKETCHAT_WEBHOOK"):
+            Constants.ROCKETCHAT_WEBHOOK = os.getenv("ROCKETCHAT_WEBHOOK")
 
         if os.getenv("SCHEDULER_INTERVAL"):
             Constants.SCHEDULER_INTERVAL = int(os.getenv("SCHEDULER_INTERVAL"))
@@ -200,12 +219,21 @@ if __name__ == "__main__":
             Constants.JIRA_ISSUE_TYPE = os.getenv("JIRA_ISSUE_TYPE")
 
         if os.getenv("JIRA_PRIORITY"):
-            Constants.JIRA_PRIORITY = os.getenv("JIRA_PRIORITY")
+            Constants.JIRA_PRIORITY = json.loads(os.getenv("JIRA_PRIORITY"))
 
-        logging.info(
-            "Starting prometheus on port " + str(Constants.PROMETHEUS_PORT) + "..."
-        )
-        start_http_server(Constants.PROMETHEUS_PORT)
+        if os.getenv("JIRA_HOST"):
+            Constants.JIRA_HOST = os.getenv("JIRA_HOST")
+
+        if os.getenv("JIRA_TOKEN"):
+            Constants.JIRA_TOKEN = os.getenv("JIRA_TOKEN")
+
+        if os.getenv("JIRA_PROJECT_ID"):
+            Constants.JIRA_PROJECT_ID = os.getenv("JIRA_PROJECT_ID")
+
+        if os.getenv("JIRA_USER"):
+            Constants.JIRA_USER = os.getenv("JIRA_USER")
+
+        PrometheusUtil.init_prometheus()
 
         schedule.every(Constants.SCHEDULER_INTERVAL).minutes.do(InventoryChecker().run)
         schedule.run_all()
@@ -214,5 +242,5 @@ if __name__ == "__main__":
             schedule.run_pending()
             time.sleep(1)
     except KeyboardInterrupt:
-        print("Exiting...")
+        logging.info("Exiting...")
         sys.exit(0)

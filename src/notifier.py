@@ -1,5 +1,4 @@
 import requests
-from jira import JIRA
 
 from constants import Constants
 
@@ -46,12 +45,3 @@ class Notifier:
             return
 
         requests.post(Constants.ROCKETCHAT_WEBHOOK, json=data)
-
-    def create_jira_issues(new_cves):
-        jira = JIRA(server=Constants.JIRA_HOST, basic_auth=(Constants.JIRA_USER, Constants.JIRA_TOKEN))
-
-        for cve in new_cves.values():
-            title = cve["name"]
-            description = cve["description"] + "\n" + cve["url"]
-
-            jira.create_issue(project=Constants.JIRA_PROJECT_ID, summary=title, description=description, issuetype={"name": Constants.JIRA_ISSUE_TYPE}, priority={"name": Constants.JIRA_PRIORITY})

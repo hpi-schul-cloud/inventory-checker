@@ -36,6 +36,10 @@ class VuldbCVE:
             )
             
             if keyword:
+                if contains(self.saved_cves.keys(), name):
+                    if contains(self.saved_cves[name].keys(), "notAffected"):
+                        continue
+
                 severity_data = None
 
                 for category in child.findall("category"):
