@@ -85,6 +85,8 @@ class InventoryChecker:
                 JiraUtil.create_jira_issues(self)
         else:
             logging.info("Skipping because it's the first time starting up...")
+            for cve in self.new_cves:
+                self.new_cves[cve["name"]]["notAffected"] = True
 
         # save new cves
         FileUtil.save_cves(self)
