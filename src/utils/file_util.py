@@ -53,6 +53,8 @@ class FileUtil:
 
     def clean_old_cves(self):
         cve_list = FileUtil.load_cves(self).values()
+        if len(cve_list) == 0:
+            return
 
         self.new_cves = {}
 
@@ -70,6 +72,8 @@ class FileUtil:
 
     def clean_old_versions(self):
         version_list = FileUtil.load_versions(self)
+        if len(version_list) == 0:
+            return
 
         self.new_versions = []
 
