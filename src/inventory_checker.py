@@ -161,7 +161,7 @@ class InventoryChecker:
                     AFFECTED_PRODUCT_VERSIONS = Info(
                         "affected_product_versions_"
                         + cve["name"].replace("-", "_")
-                        + versions.replace("-", "_").replace(".", "_"),
+                        + versions.replace(" - ", "_").replace(".", "_"),
                         "The affected versions per product",
                     )
                     AFFECTED_PRODUCT_VERSIONS.info(
