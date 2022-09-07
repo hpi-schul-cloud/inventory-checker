@@ -237,7 +237,7 @@ if __name__ == "__main__":
 
         PrometheusUtil.init_prometheus()
 
-        schedule.every(Constants.SCHEDULER_INTERVAL).minutes.do(InventoryChecker().run)
+        schedule.every(Constants.SCHEDULER_INTERVAL).minutes.do(lambda: InventoryChecker().run())
         schedule.run_all()
 
         while True:
