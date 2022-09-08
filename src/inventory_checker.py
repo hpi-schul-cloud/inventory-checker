@@ -3,8 +3,10 @@ import logging
 import os
 import sys
 import time
+import traceback
 from datetime import datetime, timedelta, timezone
 from operator import contains
+from types import TracebackType
 
 import schedule
 from dotenv import load_dotenv
@@ -60,11 +62,30 @@ class InventoryChecker:
 
         self.new_cves = {}
 
-        CisaCVE.fetch_cves(self)
-        VuldbCVE.fetch_cves(self)
-        CertCVE.fetch_cves(self)
-        # Needs to be last to fetch versions of affected products
-        NvdCVE.fetch_cves(self)
+        try:
+            CisaCVE.fetch_cves(self)
+        except Exception as e:
+            logging.error("Error while fetching Cisa CVE Source: ")
+            logging.exception(e)
+
+        try:
+            VuldbCVE.fetch_cves(self)
+        except Exception as e:
+            logging.error("Error while fetching Vuldb CVE Source: ")
+            logging.exception(e)
+
+        try:
+            CertCVE.fetch_cves(self)
+        except Exception as e:
+            logging.error("Error while fetching Cert CVE Source: ")
+            logging.exception(e)
+
+        try:
+            # Needs to be last to fetch versions of affected products
+            NvdCVE.fetch_cves(self)
+        except Exception as e:
+            logging.error("Error while fetching Nvd CVE Source: ")
+            logging.exception(e)
 
         new_cve_size = len(self.new_cves)
 
@@ -102,14 +123,11 @@ class InventoryChecker:
         logging.info("")
 
     def clear_prometheus(self):
-        cleared = []
-
         names = list(REGISTRY._names_to_collectors.keys())
         for name in names:
             if name.startswith("affected_product_versions_") or name.startswith("cve"):
                 collector = REGISTRY._names_to_collectors.get(name)
-                if not contains(cleared, collector):
-                    cleared.append(collector)
+                if collector != None:
                     REGISTRY.unregister(collector)
 
     def update_prometheus(self):
@@ -234,6 +252,12 @@ if __name__ == "__main__":
 
         if os.getenv("JIRA_USER"):
             Constants.JIRA_USER = os.getenv("JIRA_USER")
+
+        if os.getenv("KEYWORD_FILTER"):
+            Constants.KEYWORD_FILTER = json.loads(os.getenv("KEYWORD_FILTER"))
+
+        if os.getenv("ADDITIONAL_KEYWORDS"):
+            Constants.ADDITIONAL_KEYWORDS = json.loads(os.getenv("ADDITIONAL_KEYWORDS"))
 
         PrometheusUtil.init_prometheus()
 

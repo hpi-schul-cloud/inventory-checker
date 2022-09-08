@@ -1,4 +1,5 @@
 from operator import contains
+from os import replace
 
 import requests
 from constants import Constants
@@ -35,15 +36,15 @@ class GrafanaFetcher:
 
         for frame in response["results"]["A"]["frames"]:
             if contains(frame["schema"]["fields"][1]["labels"].keys(), "image"):
-                namespace = frame["schema"]["fields"][1]["labels"]["namespace"]
+                # namespace = frame["schema"]["fields"][1]["labels"]["namespace"]
                 image = frame["schema"]["fields"][1]["labels"]["image"]
 
                 if not contains(self.images, image):
                     self.images.append(image)
 
-                    if not namespace.startswith("kube"):
-                        if not contains(image, "kube-"):
-                            images.append(image)
+                   # if not namespace.startswith("kube"):
+                    #    if not contains(image, "kube-"):
+                    images.append(image)
 
         keywords = []
 
@@ -55,12 +56,26 @@ class GrafanaFetcher:
 
             image_splitted = image.split("/")
 
-            keyword = image_splitted[1] if len(image_splitted) == 2 else image_splitted[0]
+            keyword = (image_splitted[1] if len(image_splitted) == 2 else image_splitted[0]).replace("@sha256", "")
 
-            if not contains(list(map(lambda e: e["keyword"], keywords)), keyword):
+            if not contains(list(map(lambda e: e["keyword"], keywords)), keyword) and not contains(Constants.KEYWORD_FILTER, keyword):
                 keywords.append({
                     "keyword": keyword,
                     "version": image_version
+                })
+
+        for additional_keyword in Constants.ADDITIONAL_KEYWORDS:
+            if not contains(list(map(lambda e: e["keyword"], keywords)), additional_keyword):
+                keywords.append({
+                    "keyword": additional_keyword,
+                    "version": ""
+                })
+
+        for keyword in keywords:
+            if "-" in keyword["keyword"]:
+                keywords.append({
+                    "keyword": keyword["keyword"].replace("-", " "),
+                    "version": keyword["version"]
                 })
 
         return keywords

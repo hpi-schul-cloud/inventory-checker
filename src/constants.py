@@ -26,6 +26,8 @@ class Constants:
         "low": "Low",
         "unknown": "Medium"
     }
+    KEYWORD_FILTER=[]
+    ADDITIONAL_KEYWORDS=[]
 
     # CVE Source URLs
     CISA_CVE_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"

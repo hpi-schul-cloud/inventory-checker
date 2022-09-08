@@ -65,6 +65,9 @@ class NvdCVE:
 
                         versions = NvdCVE.retrieve_versions(child["configurations"]["nodes"], keyword["keyword"])
 
+                        if len(versions) == 0:
+                            affected = True
+
                         try:
                             for version in versions:
                                 version_start = version.split(" - ")[0]
