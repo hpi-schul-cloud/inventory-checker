@@ -24,7 +24,7 @@ class FileUtil:
 
     def load_versions(self):
         if not exists(Constants.VERSION_FILE_PATH):
-            return {}
+            return []
 
         file = open(Constants.VERSION_FILE_PATH)
         s = file.read()
