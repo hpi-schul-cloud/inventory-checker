@@ -58,7 +58,7 @@ class GrafanaFetcher:
 
             keyword = (image_splitted[1] if len(image_splitted) == 2 else image_splitted[0]).replace("@sha256", "")
 
-            if not contains(list(map(lambda e: e["keyword"], keywords)), keyword) and not contains(Constants.KEYWORD_FILTER, keyword):
+            if not contains(list(map(lambda e: e["keyword"], keywords)), keyword) and not contains(list(map(lambda e: e.lower(), Constants.KEYWORD_FILTER)), keyword.lower()):
                 keywords.append({
                     "keyword": keyword,
                     "version": image_version

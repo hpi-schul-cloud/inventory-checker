@@ -17,7 +17,9 @@ class JiraUtil:
 
         for cve in self.new_cves.values():
             title = cve["name"] + " - " + cve["keyword"]
-            description = cve["description"] + "\n" + cve["url"]
+            versions = "???" if len(cve["affected_versions"]) == 0 else ", ".join(cve["affected_versions"])
+
+            description = cve["description"] + "\n" + cve["url"] + "\n\nAffected versions: " + versions
 
             issue = jira.create_issue(project=Constants.JIRA_PROJECT_ID, summary=title, description=description, issuetype={"name": Constants.JIRA_ISSUE_TYPE}, priority={"name": SeverityUtil.transformSeverityToJiraPriority(cve["severity"])})
             self.new_cves[cve["name"]]["issueId"] = issue.id
@@ -41,9 +43,13 @@ class JiraUtil:
             if not contains(cve.keys(), "issueId"):
                 continue
 
-            issues = jira.search_issues('status = Done AND id = ' + cve["issueId"])
-            
-            if len(issues) == 1:
-                self.saved_cves[cve["name"]]["notAffected"] = True
+            try:
+                issues = jira.search_issues('status = Done AND id = ' + cve["issueId"])
+                
+                if len(issues) == 1:
+                    self.saved_cves[cve["name"]]["notAffected"] = True
+            except:
+                # Might get thrown if Ticket was deleted or the auth token is not valid
+                continue
 
         FileUtil.save_cves(self)
