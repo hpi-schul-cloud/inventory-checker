@@ -59,7 +59,6 @@ class FileUtil:
         self.new_cves = {}
 
         for cve in cve_list:
-            print(self.start_date.timestamp())
             if (
                 datetime.strptime(cve["date"], "%d.%m.%Y").timestamp()
                 >= self.start_date.timestamp() - 60 * 60 * 24 # need to subtract 1 day or else the invch might be stuck in a cve posting loop for 1 day
