@@ -68,11 +68,12 @@ class InventoryChecker:
             logging.error("Error while fetching Cisa CVE Source: ")
             logging.exception(e)
 
-        try:
-            VuldbCVE.fetch_cves(self)
-        except Exception as e:
-            logging.error("Error while fetching Vuldb CVE Source: ")
-            logging.exception(e)
+        # No longer used because VuldbCVE is chargeable. The CVE's are also displayed in NVD.
+        # try:
+        #     VuldbCVE.fetch_cves(self)
+        # except Exception as e:
+        #     logging.error("Error while fetching Vuldb CVE Source: ")
+        #     logging.exception(e)
 
         try:
             CertCVE.fetch_cves(self)
