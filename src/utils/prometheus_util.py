@@ -24,7 +24,7 @@ class PrometheusUtil:
                 "interval": str(Constants.INTERVAL.days),
                 "jira_project_id": "-" if Constants.JIRA_HOST == None else str(Constants.JIRA_PROJECT_ID),
                 "jira_issue_type": "-" if Constants.JIRA_HOST == None else str(Constants.JIRA_ISSUE_TYPE),
-                "jira_priority": "{}" if Constants.JIRA_HOST == None else str(json.dump(Constants.JIRA_PRIORITY)),
+                "jira_priority": "{}" if Constants.JIRA_HOST == None else json.dumps(Constants.JIRA_PRIORITY),
                 "uses_rocketchat": str(True) if Constants.ROCKETCHAT_WEBHOOK != None else str(False)
             }
         )
