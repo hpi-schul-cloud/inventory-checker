@@ -51,7 +51,7 @@ class InventoryChecker:
         logging.info("Cleaning old Versions's...")
         FileUtil.clean_old_versions(self)
 
-        logging.info("Clearing prometheus")
+        logging.info("Clearing prometheus...")
         self.clear_prometheus()
 
         logging.info("")
