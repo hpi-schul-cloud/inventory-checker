@@ -42,6 +42,7 @@ class InventoryChecker:
         logging.info("Creating log directory...")
         FileUtil.create_log_dir(self)
 
+        logging.info("---------------------------------------------------------------")
         logging.info("Loading keywords and versions...")
         self.inventory = GrafanaFetcher.load_inventory(self)
 
