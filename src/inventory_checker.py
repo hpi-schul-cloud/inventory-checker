@@ -45,19 +45,22 @@ class InventoryChecker:
         logging.info("Loading keywords and versions...")
         self.inventory = GrafanaFetcher.load_inventory(self)
 
+        logging.info("---------------------------------------------------------------")
         logging.info("Cleaning old CVE's...")
         FileUtil.clean_old_cves(self)
 
+        logging.info("---------------------------------------------------------------")
         logging.info("Cleaning old Versions's...")
         FileUtil.clean_old_versions(self)
 
+        logging.info("---------------------------------------------------------------")
         logging.info("Clearing prometheus...")
         self.clear_prometheus()
 
-        logging.info("")
+        logging.info("---------------------------------------------------------------")
         logging.info(f"Looking for: {self.inventory}")
         logging.info(f"within last {Constants.INTERVAL.days} days")
-        logging.info("")
+        logging.info("---------------------------------------------------------------")
 
         # Load old CVEs for no duplications
         self.saved_cves = FileUtil.load_cves(self)
