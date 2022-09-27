@@ -52,5 +52,5 @@ jobs:
           context: .
           platforms: linux/amd64
           push: true
-          tags: latest
+          tags: invch-1.2.25
           labels: ${{ steps.docker_meta_img_hub.outputs.labels }}
