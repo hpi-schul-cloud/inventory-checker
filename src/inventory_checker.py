@@ -40,7 +40,6 @@ class InventoryChecker:
         self.start_date = self.now - Constants.INTERVAL
 
         logging.info("---------------------------------------------------------------")
-        logging.info("---------------------------------------------------------------")
         logging.info("Creating log directory...")
         FileUtil.create_log_dir(self)
 
