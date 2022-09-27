@@ -38,7 +38,7 @@ class InventoryChecker:
         self.local_timezone = timezone(timedelta(seconds=self.offset))
         self.now = datetime.now(self.local_timezone)
         self.start_date = self.now - Constants.INTERVAL
-
+        logging.info("---------------------------------------------------------------")
         logging.info("---------------------------------------------------------------")
         logging.info("Creating log directory...")
         FileUtil.create_log_dir(self)
