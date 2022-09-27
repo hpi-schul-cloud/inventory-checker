@@ -39,7 +39,7 @@ class InventoryChecker:
         self.now = datetime.now(self.local_timezone)
         self.start_date = self.now - Constants.INTERVAL
 
-        logging.info("Creating log directory")
+        logging.info("Creating log directory...")
         FileUtil.create_log_dir(self)
 
         logging.info("Loading keywords and versions...")
