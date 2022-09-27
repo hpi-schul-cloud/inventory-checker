@@ -38,7 +38,7 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository_owner }}/invch
           tags: |
-            type=match,value={{branch}},pattern=,suffix=-latest
+            type=match,value={{branch}},pattern=.*\d,suffix=-latest
       - name: Log into registry
         uses: docker/login-action@v1
         with:
@@ -52,5 +52,5 @@ jobs:
           context: .
           platforms: linux/amd64
           push: true
-          tags: latest
+          tags: ${{ steps.docker_meta_img_hub.outputs.tags }}
           labels: ${{ steps.docker_meta_img_hub.outputs.labels }}
