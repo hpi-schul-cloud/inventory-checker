@@ -109,26 +109,26 @@ class InventoryChecker:
         new_cve_size = len(self.new_cves)
 
         # Don't post new cve's because it would spam quiet a lot
-        if not hasattr(self, "first_time"):
-            if new_cve_size == 0:
-                logging.info(f"No new CVE's within last {Constants.INTERVAL.days} days")
-            else:
-                logging.warning(
-                    f"{new_cve_size} new CVE's within last {Constants.INTERVAL.days} days"
-                )
-                for cve in self.new_cves.values():
-                    logging.warning(f"{cve}")
-                    logging.info("")
-
-                logging.info("Posting new CVE's...")
-                Notifier.post_cve(self.new_cves)
-                JiraUtil.create_jira_issues(self)
+     #   if not hasattr(self, "first_time"):
+        if new_cve_size == 0:
+            logging.info(f"No new CVE's within last {Constants.INTERVAL.days} days")
         else:
-            logging.info("Skipping because it's the first time starting up...")
+            logging.warning(
+                f"{new_cve_size} new CVE's within last {Constants.INTERVAL.days} days"
+            )
             for cve in self.new_cves.values():
-                self.new_cves[cve["name"]]["notAffected"] = True
-            data = {"text": "Connected new Instance"}
-            Notifier.post_message(data)
+                logging.warning(f"{cve}")
+                logging.info("")
+
+            logging.info("Posting new CVE's...")
+            Notifier.post_cve(self.new_cves)
+            JiraUtil.create_jira_issues(self)
+        # else:
+        #     logging.info("Skipping because it's the first time starting up...")
+        #     for cve in self.new_cves.values():
+        #         self.new_cves[cve["name"]]["notAffected"] = True
+        #     data = {"text": "Connected new Instance"}
+        #     Notifier.post_message(data)
 
         # save new cves
         FileUtil.save_cves(self)
