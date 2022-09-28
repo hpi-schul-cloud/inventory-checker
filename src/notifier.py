@@ -1,16 +1,16 @@
 import requests
-from inventory_checker import InventoryChecker
 
 from constants import Constants
+import logging
 
 
 class Notifier:
-    def post_cve(new_cves):
+    def post_cve( new_cves):
         if not Constants.ROCKETCHAT_WEBHOOK:
-            InventoryChecker.post_to_logger("No Rocketchat message will be sent. ROCKETCHAT_WEBHOOK is not loaded.")
+            logging.info("No Rocketchat message will be sent. ROCKETCHAT_WEBHOOK is not loaded.")
             return
         elif(len(new_cves) == 0):
-            InventoryChecker.post_to_logger("No Rocketchat message will be sent. No new CVE's are found.")
+            logging.info("No Rocketchat message will be sent. No new CVE's are found.")
             return
 
         msg = f"Found {len(new_cves)} new CVE's within last {Constants.INTERVAL.days} days:"
@@ -46,8 +46,8 @@ class Notifier:
 
     def post_message(data):
         if not Constants.ROCKETCHAT_WEBHOOK:
-            InventoryChecker.post_to_logger("No Rocketchat message will be sent. ROCKETCHAT_WEBHOOK is not loaded.")
+            logging.info("No Rocketchat message will be sent. ROCKETCHAT_WEBHOOK is not loaded.")
             return
 
         requests.post(Constants.ROCKETCHAT_WEBHOOK, json=data)
-        InventoryChecker.post_to_logger("Sending to Rocketchat: " + data)
+        logging.info("Sending to Rocketchat: " + data)
