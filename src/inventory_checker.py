@@ -297,7 +297,7 @@ if __name__ == "__main__":
         
         if os.getenv("JIRA_PRIORITY"):
             Constants.JIRA_PRIORITY = json.loads(os.getenv("JIRA_PRIORITY"))
-            logging.info("JIRA_PRIORITY loaded = "+ Constants.JIRA_PRIORITY)
+            logging.info(f"JIRA_PRIORITY loaded = {Constants.JIRA_PRIORITY}")
         else:
             logging.info("JIRA_PRIORITY not available")
 
