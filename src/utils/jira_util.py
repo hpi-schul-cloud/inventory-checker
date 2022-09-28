@@ -41,6 +41,7 @@ class JiraUtil:
             jira_options = {'server': jira_server}
             jira = JIRA(options=jira_options, basic_auth=(jira_user, jira_password))
                                             # ^--- Note the tuple
+            logging.info("succsessful" )                                
             return jira
         except Exception as e:
             logging.error("Failed to connect to JIRA: %s" % e)
@@ -72,5 +73,7 @@ class JiraUtil:
                 logging.error("Ticket was deleted or the auth token is not valid")
                 logging.exception(e)
                 continue
+
+        logging.info("Checked all CVE's") 
 
         FileUtil.save_cves(self)
