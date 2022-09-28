@@ -214,6 +214,11 @@ class InventoryChecker:
                 case "unknown":
                     CVE_UNKOWN_SEVERITY_GAUGE.inc()
 
+    def post_to_logger(data):
+        logging.info(data)
+
+
+
 
 if __name__ == "__main__":
     try:
@@ -222,50 +227,104 @@ if __name__ == "__main__":
         )
         logging.info("Loading env variables...")
         load_dotenv()
-        Constants.GRAFANA_TOKEN = os.getenv("GRAFANA_TOKEN")
-        Constants.GRAFANA_HOST = os.getenv("GRAFANA_HOST")
-        Constants.GRAFANA_PROMETHEUS_UID = os.getenv("GRAFANA_PROMETHEUS_UID")
+
+        if os.getenv("GRAFANA_TOKEN"):
+            Constants.GRAFANA_TOKEN = os.getenv("GRAFANA_TOKEN")
+            logging.info("GRAFANA_TOKEN loaded")
+        else:
+            logging.info("GRAFANA_TOKEN not available")
+        
+        if os.getenv("GRAFANA_HOST"):
+            Constants.GRAFANA_HOST = os.getenv("GRAFANA_HOST")
+            logging.info("GRAFANA_HOST loaded = "+ Constants.GRAFANA_HOST)
+        else:
+            logging.info("GRAFANA_HOST not available")
+        
+        if os.getenv("GRAFANA_PROMETHEUS_UID"):
+            Constants.GRAFANA_PROMETHEUS_UID = os.getenv("GRAFANA_PROMETHEUS_UID")
+            logging.info("GRAFANA_PROMETHEUS_UID loaded ")
+        else:
+            logging.info("GRAFANA_PROMETHEUS_UID not available")
 
         if os.getenv("ROCKETCHAT_WEBHOOK"):
             Constants.ROCKETCHAT_WEBHOOK = os.getenv("ROCKETCHAT_WEBHOOK")
+            logging.info("REPO_CREDENTIALS loaded")
+        else:
+            logging.info("REPO_CREDENTIALS not available")
 
         if os.getenv("SCHEDULER_INTERVAL"):
             Constants.SCHEDULER_INTERVAL = int(os.getenv("SCHEDULER_INTERVAL"))
+            logging.info("JIRA_ISSUE_TYPE loaded = "+ Constants.JIRA_ISSUE_TYPE)
+        else:
+            logging.info("JIRA_ISSUE_TYPE not available")
 
         if os.getenv("INTERVAL"):
             Constants.INTERVAL = timedelta(days=int(os.getenv("INTERVAL")))
+            logging.info("REPO_CREDENTIALS loaded")
+        else:
+            logging.info("REPO_CREDENTIALS not available")
 
         if os.getenv("PROMETHEUS_PORT"):
             Constants.PROMETHEUS_PORT = timedelta(
                 days=int(os.getenv("PROMETHEUS_PORT"))
             )
+            logging.info("JIRA_ISSUE_TYPE loaded = "+ Constants.JIRA_ISSUE_TYPE)
+        else:
+            logging.info("JIRA_ISSUE_TYPE not available")
 
         if os.getenv("REPO_CREDENTIALS"):
             Constants.REPO_CREDENTIALS = json.loads(os.getenv("REPO_CREDENTIALS"))
+            logging.info("REPO_CREDENTIALS loaded")
+        else:
+            logging.info("REPO_CREDENTIALS not available")
 
         if os.getenv("JIRA_ISSUE_TYPE"):
             Constants.JIRA_ISSUE_TYPE = os.getenv("JIRA_ISSUE_TYPE")
-
+            logging.info("JIRA_ISSUE_TYPE loaded = "+ Constants.JIRA_ISSUE_TYPE)
+        else:
+            logging.info("JIRA_ISSUE_TYPE not available")
+        
         if os.getenv("JIRA_PRIORITY"):
             Constants.JIRA_PRIORITY = json.loads(os.getenv("JIRA_PRIORITY"))
+            logging.info("JIRA_PRIORITY loaded = "+ Constants.JIRA_PRIORITY)
+        else:
+            logging.info("JIRA_PRIORITY not available")
 
         if os.getenv("JIRA_HOST"):
             Constants.JIRA_HOST = os.getenv("JIRA_HOST")
+            logging.info("JIRA_HOST loaded = "+ Constants.JIRA_HOST)
+        else:
+            logging.info("JIRA_HOST not available")
 
         if os.getenv("JIRA_TOKEN"):
             Constants.JIRA_TOKEN = os.getenv("JIRA_TOKEN")
+            logging.info("JIRA_TOKEN loaded")
+        else:
+            logging.info("JIRA_TOKEN not available")
 
         if os.getenv("JIRA_PROJECT_ID"):
             Constants.JIRA_PROJECT_ID = os.getenv("JIRA_PROJECT_ID")
+            logging.info("JIRA_PROJECT_ID loaded = "+ Constants.JIRA_PROJECT_ID)
+        else:
+            logging.info("JIRA_PROJECT_ID not available")
 
         if os.getenv("JIRA_USER"):
             Constants.JIRA_USER = os.getenv("JIRA_USER")
+            logging.info("JIRA_USER loaded = " + Constants.JIRA_USER)
+        else:
+            logging.info("JIRA_USER not available")
 
         if os.getenv("KEYWORD_FILTER"):
             Constants.KEYWORD_FILTER = json.loads(os.getenv("KEYWORD_FILTER"))
+            logging.info("KEYWORD_FILTER loaded = " + Constants.KEYWORD_FILTER)
+        else:
+            logging.info("KEYWORD_FILTER not available")
 
         if os.getenv("ADDITIONAL_KEYWORDS"):
             Constants.ADDITIONAL_KEYWORDS = json.loads(os.getenv("ADDITIONAL_KEYWORDS"))
+            logging.info("ADDITIONAL_KEYWORDS loaded: =" + Constants.ADDITIONAL_KEYWORDS)
+        else:
+            logging.info("ADDITIONAL_KEYWORDS not available")
 
         PrometheusUtil.init_prometheus()
 
