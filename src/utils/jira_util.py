@@ -29,6 +29,7 @@ class JiraUtil:
                 logging.info(f"Created Ticket: {cve}")
             except Exception as e:
                 logging.error("Error while creating JIRA Tickets: ")
+                logging.info(f"Ticket: {cve}")
                 logging.exception(e)
                 continue
            
