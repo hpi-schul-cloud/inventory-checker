@@ -24,7 +24,8 @@ class JiraUtil:
             description = cve["description"] + "\n" + cve["url"] + "\n\nAffected versions: " + versions
 
             try:
-                issue = jira.create_issue(project=Constants.JIRA_PROJECT_ID, summary=title, description=description, issuetype={"name": Constants.JIRA_ISSUE_TYPE}, priority={"name": SeverityUtil.transformSeverityToJiraPriority(cve["severity"])})
+                #issue = jira.create_issue(project=Constants.JIRA_PROJECT_ID, summary=title, description=description, issuetype={"name": Constants.JIRA_ISSUE_TYPE}, priority={"name": SeverityUtil.transformSeverityToJiraPriority(cve["severity"])})
+                issue = jira.create_issue(project=Constants.JIRA_PROJECT_ID, summary=title, description=description, issuetype={"name": Constants.JIRA_ISSUE_TYPE})
                 self.new_cves[cve["name"]]["issueId"] = issue.id
                 logging.info(f"Created Ticket: {cve}")
             except Exception as e:
