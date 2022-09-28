@@ -316,13 +316,13 @@ if __name__ == "__main__":
 
         if os.getenv("KEYWORD_FILTER"):
             Constants.KEYWORD_FILTER = json.loads(os.getenv("KEYWORD_FILTER"))
-            logging.info("KEYWORD_FILTER loaded = " + Constants.KEYWORD_FILTER)
+            logging.info("KEYWORD_FILTER loaded = " + str(Constants.KEYWORD_FILTER))
         else:
             logging.info("KEYWORD_FILTER not available")
 
         if os.getenv("ADDITIONAL_KEYWORDS"):
             Constants.ADDITIONAL_KEYWORDS = json.loads(os.getenv("ADDITIONAL_KEYWORDS"))
-            logging.info("ADDITIONAL_KEYWORDS loaded: =" + Constants.ADDITIONAL_KEYWORDS)
+            logging.info("ADDITIONAL_KEYWORDS loaded: =" + str(Constants.ADDITIONAL_KEYWORDS))
         else:
             logging.info("ADDITIONAL_KEYWORDS not available")
 
