@@ -63,9 +63,19 @@ class InventoryChecker:
         logging.info(f"within last {Constants.INTERVAL.days} days")
         logging.info("---------------------------------------------------------------")
 
-        # Load old CVEs for no duplications
+
+        logging.info("Load old CVEs for no duplications:")
         self.saved_cves = FileUtil.load_cves(self)
 
+        for cve in self.saved_cves.values():
+            logging.warning(f"{cve}")
+            logging.info("")
+
+        # Debug Rocketchat: 
+        logging.info("Debug Rocketchat: Posting loaded CVE's...")
+        Notifier.post_cve(self.saved_cves)
+
+        logging.info("---------------------------------------------------------------")
         self.new_cves = {}
 
         try:
@@ -214,8 +224,6 @@ class InventoryChecker:
                 case "unknown":
                     CVE_UNKOWN_SEVERITY_GAUGE.inc()
 
-    def post_to_logger(data):
-        logging.info(data)
 
 
 
