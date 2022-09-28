@@ -50,4 +50,4 @@ class Notifier:
             return
 
         requests.post(Constants.ROCKETCHAT_WEBHOOK, json=data)
-        logging.info("Sending to Rocketchat: " + data)
+        logging.info("Sending to Rocketchat: " + str(data))
