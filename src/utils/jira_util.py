@@ -23,10 +23,15 @@ class JiraUtil:
 
             description = cve["description"] + "\n" + cve["url"] + "\n\nAffected versions: " + versions
 
-            # TODO: Catch Exception
-            issue = jira.create_issue(project=Constants.JIRA_PROJECT_ID, summary=title, description=description, issuetype={"name": Constants.JIRA_ISSUE_TYPE}, priority={"name": SeverityUtil.transformSeverityToJiraPriority(cve["severity"])})
-            self.new_cves[cve["name"]]["issueId"] = issue.id
-            logging.info(f"Created Ticket: {cve}")
+            try:
+                issue = jira.create_issue(project=Constants.JIRA_PROJECT_ID, summary=title, description=description, issuetype={"name": Constants.JIRA_ISSUE_TYPE}, priority={"name": SeverityUtil.transformSeverityToJiraPriority(cve["severity"])})
+                self.new_cves[cve["name"]]["issueId"] = issue.id
+                logging.info(f"Created Ticket: {cve}")
+            except Exception as e:
+                logging.error("Error while creating JIRA Tickets: ")
+                logging.exception(e)
+                continue
+           
 
     def connect_jira(jira_server, jira_user, jira_password):
     # Connect to JIRA. Return None on error
