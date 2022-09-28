@@ -67,15 +67,11 @@ class InventoryChecker:
         logging.info("Load old CVEs for no duplications:")
         self.saved_cves = FileUtil.load_cves(self)
 
-        for cve in self.saved_cves.values():
-            logging.warning(f"From File: {cve}")
-
-        # Debug Rocketchat: 
-        logging.info("Debug Rocketchat: Posting loaded CVE's...")
-        data = {"text": "Debug Rocketchat: Posting loaded CVE's..."}
-        Notifier.post_message(data)
-
-        Notifier.post_cve(self.saved_cves)
+        if (len(self.saved_cves) == 0):
+            logging.warning(f"No old CVE's found.")
+        else:
+            for cve in self.saved_cves.values():
+                logging.warning(f"From File: {cve}")
 
         logging.info("---------------------------------------------------------------")
         self.new_cves = {}
