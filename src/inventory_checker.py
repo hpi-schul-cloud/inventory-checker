@@ -248,29 +248,29 @@ if __name__ == "__main__":
 
         if os.getenv("ROCKETCHAT_WEBHOOK"):
             Constants.ROCKETCHAT_WEBHOOK = os.getenv("ROCKETCHAT_WEBHOOK")
-            logging.info("REPO_CREDENTIALS loaded")
+            logging.info("ROCKETCHAT_WEBHOOK loaded")
         else:
-            logging.info("REPO_CREDENTIALS not available")
+            logging.info("ROCKETCHAT_WEBHOOK not available")
 
         if os.getenv("SCHEDULER_INTERVAL"):
             Constants.SCHEDULER_INTERVAL = int(os.getenv("SCHEDULER_INTERVAL"))
-            logging.info("JIRA_ISSUE_TYPE loaded = "+ Constants.JIRA_ISSUE_TYPE)
+            logging.info("SCHEDULER_INTERVAL loaded = "+ Constants.SCHEDULER_INTERVAL)
         else:
-            logging.info("JIRA_ISSUE_TYPE not available")
+            logging.info("SCHEDULER_INTERVAL not available")
 
         if os.getenv("INTERVAL"):
             Constants.INTERVAL = timedelta(days=int(os.getenv("INTERVAL")))
-            logging.info("REPO_CREDENTIALS loaded")
+            logging.info("INTERVAL loaded")
         else:
-            logging.info("REPO_CREDENTIALS not available")
+            logging.info("INTERVAL not available")
 
         if os.getenv("PROMETHEUS_PORT"):
             Constants.PROMETHEUS_PORT = timedelta(
                 days=int(os.getenv("PROMETHEUS_PORT"))
             )
-            logging.info("JIRA_ISSUE_TYPE loaded = "+ Constants.JIRA_ISSUE_TYPE)
+            logging.info("PROMETHEUS_PORT loaded = "+ Constants.PROMETHEUS_PORT)
         else:
-            logging.info("JIRA_ISSUE_TYPE not available")
+            logging.info("PROMETHEUS_PORT not available")
 
         if os.getenv("REPO_CREDENTIALS"):
             Constants.REPO_CREDENTIALS = json.loads(os.getenv("REPO_CREDENTIALS"))
