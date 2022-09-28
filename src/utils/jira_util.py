@@ -13,7 +13,15 @@ class JiraUtil:
         if not Constants.JIRA_HOST or not Constants.JIRA_TOKEN or not Constants.JIRA_USER or not Constants.JIRA_PROJECT_ID:
             return
 
-        jira = JIRA(server=Constants.JIRA_HOST, basic_auth=(Constants.JIRA_USER, Constants.JIRA_TOKEN))
+        jira = JiraUtil.connect_jira(Constants.JIRA_HOST, Constants.JIRA_USER, Constants.JIRA_TOKEN)
+        
+        # Delete following block
+        projects = jira.projects()
+        for v in projects:
+            logging.info(f"Projekte in Jira: {v}")
+
+        if(jira == None):
+            return
 
         for cve in self.new_cves.values():
             title = cve["name"] + " - " + cve["keyword"]
@@ -24,8 +32,21 @@ class JiraUtil:
             issue = jira.create_issue(project=Constants.JIRA_PROJECT_ID, summary=title, description=description, issuetype={"name": Constants.JIRA_ISSUE_TYPE}, priority={"name": SeverityUtil.transformSeverityToJiraPriority(cve["severity"])})
             self.new_cves[cve["name"]]["issueId"] = issue.id
 
+    def connect_jira(jira_server, jira_user, jira_password):
+    # Connect to JIRA. Return None on error
+        try:
+            logging.info("Connecting to JIRA: %s" % jira_server)
+            jira_options = {'server': jira_server}
+            jira = JIRA(options=jira_options, basic_auth=(jira_user, jira_password))
+                                            # ^--- Note the tuple
+            return jira
+        except Exception as e:
+            logging.error("Failed to connect to JIRA: %s" % e)
+            return None
+
     def check_jira_issues(self):
         if not Constants.JIRA_HOST or not Constants.JIRA_TOKEN or not Constants.JIRA_USER or not Constants.JIRA_PROJECT_ID:
+            logging.info("No Rocketchat message will be sent. ROCKETCHAT_WEBHOOK is not loaded.")
             return
 
         logging.info("")
