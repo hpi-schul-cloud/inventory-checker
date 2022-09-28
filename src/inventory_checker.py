@@ -115,6 +115,7 @@ class InventoryChecker:
             logging.info("Skipping because it's the first time starting up...")
             for cve in self.new_cves.values():
                 self.new_cves[cve["name"]]["notAffected"] = True
+            Notifier.post_message("Connected new Instance")
 
         # save new cves
         FileUtil.save_cves(self)
