@@ -23,8 +23,10 @@ class JiraUtil:
 
             description = cve["description"] + "\n" + cve["url"] + "\n\nAffected versions: " + versions
 
+            # TODO: Catch Exception
             issue = jira.create_issue(project=Constants.JIRA_PROJECT_ID, summary=title, description=description, issuetype={"name": Constants.JIRA_ISSUE_TYPE}, priority={"name": SeverityUtil.transformSeverityToJiraPriority(cve["severity"])})
             self.new_cves[cve["name"]]["issueId"] = issue.id
+            logging.info(f"Created Ticket: {cve}")
 
     def connect_jira(jira_server, jira_user, jira_password):
     # Connect to JIRA. Return None on error
@@ -43,13 +45,9 @@ class JiraUtil:
             logging.info("No Rocketchat message will be sent. ROCKETCHAT_WEBHOOK is not loaded.")
             return
 
-        logging.info("")
-        logging.info("~~~~~~~~~~~~~~~~~~~~~~~")
-        logging.info("")
-
         logging.info("Looking for solved JIRA Tickets...")
 
-        jira = JIRA(server=Constants.JIRA_HOST, basic_auth=(Constants.JIRA_USER, Constants.JIRA_TOKEN))
+        jira = JiraUtil.connect_jira(Constants.JIRA_HOST, Constants.JIRA_USER, Constants.JIRA_TOKEN)
 
         for cve in self.saved_cves.values():
             if contains(cve.keys(), "notAffected"):
@@ -59,17 +57,7 @@ class JiraUtil:
                 continue
 
             try:
-                issues = jira.search_issues('status = Done AND id = ' + cve["issueId"])
-                if len(issues) == 1:
-                    self.saved_cves[cve["name"]]["notAffected"] = True
-            except Exception as e:
-                # Might get thrown if Ticket was deleted or the auth token is not valid
-                logging.error("Error while Looking for solved JIRA Tickets: ")
-                logging.error("Ticket was deleted or the auth token is not valid")
-                logging.exception(e)
-                continue
-
-            try:
+                # issues = jira.search_issues('status = Done AND id = ' + cve["issueId"])
                 issues = jira.search_issues('id = ' + cve["issueId"])
                 logging.info(f"Info About ticket: {issues}")
             except Exception as e:
