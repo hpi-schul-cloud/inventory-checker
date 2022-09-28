@@ -14,14 +14,8 @@ class JiraUtil:
             return
 
         jira = JiraUtil.connect_jira(Constants.JIRA_HOST, Constants.JIRA_USER, Constants.JIRA_TOKEN)
-        
-        # Delete following block
-        projects = jira.projects()
-        for v in projects:
-            logging.info(f"Projekte in Jira: {v}")
-
         if(jira == None):
-            return
+            return        
 
         for cve in self.new_cves.values():
             title = cve["name"] + " - " + cve["keyword"]
