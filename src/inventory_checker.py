@@ -68,11 +68,13 @@ class InventoryChecker:
         self.saved_cves = FileUtil.load_cves(self)
 
         for cve in self.saved_cves.values():
-            logging.warning(f"{cve}")
-            logging.info("")
+            logging.warning(f"From File: {cve}")
 
         # Debug Rocketchat: 
         logging.info("Debug Rocketchat: Posting loaded CVE's...")
+        data = {"text": "Debug Rocketchat: Posting loaded CVE's..."}
+        Notifier.post_message(data)
+
         Notifier.post_cve(self.saved_cves)
 
         logging.info("---------------------------------------------------------------")
@@ -125,7 +127,8 @@ class InventoryChecker:
             logging.info("Skipping because it's the first time starting up...")
             for cve in self.new_cves.values():
                 self.new_cves[cve["name"]]["notAffected"] = True
-            Notifier.post_message("Connected new Instance")
+            data = {"text": "Connected new Instance"}
+            Notifier.post_message(data)
 
         # save new cves
         FileUtil.save_cves(self)
@@ -256,7 +259,7 @@ if __name__ == "__main__":
 
         if os.getenv("ROCKETCHAT_WEBHOOK"):
             Constants.ROCKETCHAT_WEBHOOK = os.getenv("ROCKETCHAT_WEBHOOK")
-            logging.info("ROCKETCHAT_WEBHOOK loaded")
+            logging.info("ROCKETCHAT_WEBHOOK loaded = " + Constants.ROCKETCHAT_WEBHOOK)
         else:
             logging.info("ROCKETCHAT_WEBHOOK not available")
 
