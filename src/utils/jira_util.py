@@ -84,9 +84,9 @@ class JiraUtil:
 
                             # TODO: Check if attributes are available and catch errors
                             logging.info(f"\t\tCheck if this Ticket is Done or Discarded?")
-                            #logging.info(f"\t\t\tInfo about linkedIssue name: {link.raw.type.inward}")
-                            logging.info(f"\t\t\tInfo about linkedIssue Ticket: {link.raw.inwardIssue.key}")
-                            logging.info(f"\t\t\tInfo about linkedIssue status: {link.raw.inwardIssue.fields.status.name}")
+                            logging.info(f"\t\t\tInfo about linkedIssue name: {link.type.inward}")
+                            logging.info(f"\t\t\tInfo about linkedIssue Ticket: {link.inwardIssue.key}")
+                            logging.info(f"\t\t\tInfo about linkedIssue status: {link.inwardIssue.fields.status.name}")
                         
 
 
