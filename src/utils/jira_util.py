@@ -66,8 +66,9 @@ class JiraUtil:
             try:
                 # issues = jira.search_issues('status = Done AND id = ' + cve["issueId"])
                 issue = jira.search_issues('id = ' + cve["issueId"])
-                logging.info(f"Info About ticket: {issue[0]}")
-                logging.info(f"for link in issue.fields.issuelinks:")
+                logging.info(f"Info about ticket: {issue[0]}")
+                logging.info(f"Info about ticket status: {issue[0].fields.status.name}")
+                logging.info(f"Info about linking issues")
                 for link in issue[0].fields.issuelinks:
                     logging.info(f"link")
                     if hasattr(link, "outwardIssue"):
@@ -76,14 +77,27 @@ class JiraUtil:
                     if hasattr(link, "inwardIssue"):
                         inwardIssue = link.inwardIssue
                         logging.info("\tInward: " + inwardIssue.key)
-                logging.info(f"Info About ticket.fields: {issue[0].fields}")
-                logging.info(f"Info About ticket.fields.status: {issue[0].fields.status}")
-                logging.info(f"Info About ticket.fields.status.name: {issue[0].fields.status.name}")
-                logging.info(f"Info About ticket.fields.issuetype.name: {issue[0].fields.issuetype.name}")
-                logging.info(f"Info About ticket.fields.comment.comments: {issue[0].fields.comment.comments}")
-                logging.info(f"Info About ticket.fields.summary: {issue[0].fields.summary}")
-                logging.info(f"Info About ticket.fields.project.key: {issue[0].fields.project.key}")
-                logging.info(f"Info About ticket.fields.reporter.displayName: {issue[0].fields.reporter.displayName}")
+                        # InwardIssue.key is the Ticketnumber e.g. OPS-1883
+                        # Check if this Ticket is Done or Discarded.
+                        logging.info(f"Check if this Ticket is Done or Discarded?")
+                        try:
+                            linkedIssue = jira.search_issues('key = ' + inwardIssue)
+                            logging.info(f"Info about linkedIssue: {issue[0]}")
+                            logging.info(f"Info about linkedIssue status: {issue[0].fields.status.name}")
+                        except Exception as e:
+                            logging.error("Error while Looking for linked JIRA Tickets: ")
+                            logging.error("Ticket was deleted or the auth token is not valid")
+                            logging.exception(e)
+                            continue
+
+
+
+                #logging.info(f"Info About ticket.fields.status: {issue[0].fields.status}")
+                
+                #logging.info(f"Info About ticket.fields.comment.comments: {issue[0].fields.comment.comments}")
+                #logging.info(f"Info About ticket.fields.summary: {issue[0].fields.summary}")
+                #logging.info(f"Info About ticket.fields.project.key: {issue[0].fields.project.key}")
+                #logging.info(f"Info About ticket.fields.reporter.displayName: {issue[0].fields.reporter.displayName}")
 
                 
             except Exception as e:
