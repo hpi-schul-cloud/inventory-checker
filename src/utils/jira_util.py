@@ -82,10 +82,9 @@ class JiraUtil:
                             # if(link[0].raw.)
                             # check name = is solved by
 
-                            # TODO: Check if attributes are available
+                            # TODO: Check if attributes are available and catch errors
                             logging.info(f"\t\tCheck if this Ticket is Done or Discarded?")
-                            linkedIssue = jira.search_issues('key = ' + inwardIssue.key)
-                            logging.info(f"\t\t\tInfo about linkedIssue name: {link.raw.type.inward}")
+                            #logging.info(f"\t\t\tInfo about linkedIssue name: {link.raw.type.inward}")
                             logging.info(f"\t\t\tInfo about linkedIssue Ticket: {link.raw.inwardIssue.key}")
                             logging.info(f"\t\t\tInfo about linkedIssue status: {link.raw.inwardIssue.fields.status.name}")
                         
