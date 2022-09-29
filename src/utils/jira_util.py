@@ -82,6 +82,7 @@ class JiraUtil:
                     logging.info(f"Ticket {issue[0]} is Done. Mark as not affected.")
                     count_new_solved_cves = count_new_solved_cves +1
                     # TODO:  set not anymore affected on issue
+                    #cve["notAffected"] = True
                     continue
 
                 
@@ -89,10 +90,10 @@ class JiraUtil:
                     logging.info(f"Ticket {issue[0]} resolution is Won't Do. Mark as not affected.")
                     count_new_solved_cves = count_new_solved_cves +1
                     # TODO:  set not anymore affekted on issue
+                    #cve["notAffected"] = True
                     continue
 
 
-                # TODO: if resolution Duplicate -> this
                 elif(str(issue[0].fields.resolution) == "Duplicate"):
                     logging.info(f"Ticket {issue[0]} resolution is Duplicate. Checking linked Tickets.")
 
@@ -105,21 +106,19 @@ class JiraUtil:
                     if(len(issue[0].fields.issuelinks) == 0):
                         logging.info(f"\tNo linked tickets in ticket {issue[0]}, can not be set as not affected.")
                     else: 
-                        logging.info(f"\tInfo about linked tickets")
+                        logging.info(f"\tLinked tickets:")
                         flag_all_tickets_behind_is_solved_by_links_are_done = True
                         for link in issue[0].fields.issuelinks:
                             
                             if not hasattr(link, "inwardIssue"):
-                                logging.info(f"\t\t skipping outward link: {link.type.inward}")
+                                logging.info(f"\t\t Skipping outward link: {link.type.inward}")
                                 continue
                                 
 
                             try:
-                                logging.info(f"\t\tCheck if this ticket has link type is solved by and ticket has resolution Done")
-
-                                logging.info(f"\t\t\tInfo about link name/type: {link.type.inward}")
-                                logging.info(f"\t\t\tInfo about linked ticket: {link.inwardIssue.key}")
-                                logging.info(f"\t\t\t\tInfo about linked ticket status: {link.inwardIssue.fields.status.name}")
+                                logging.info(f"\t\t\tLink name/type: {link.type.inward}")
+                                logging.info(f"\t\t\tLinked ticket: {link.inwardIssue.key}")
+                                logging.info(f"\t\t\t\tLinked ticket status: {link.inwardIssue.fields.status.name}")
 
                                 if(not (link.type.inward == "is solved by" and link.inwardIssue.fields.status.name == "Done")):
                                     flag_all_tickets_behind_is_solved_by_links_are_done = False
@@ -133,14 +132,11 @@ class JiraUtil:
                         if(flag_all_tickets_behind_is_solved_by_links_are_done):
                             logging.info(f"\t All tickets behind is solved by links have the resolution done")   
                             count_new_solved_cves = count_new_solved_cves +1
-                            # TODO:  set not anymore effekted on issue
+                            #cve["notAffected"] = True
                         else:
                             logging.info(f"\t Not All tickets behind is solved by links have the resolution done, or there was no is solved by link in this ticket")
                             logging.info(f"\tTicket {issue[0]}, can not be set as not affected.")         
 
-                        # TODO:  if  Inward link name = is solved by  &&  linked.tiket.status name == done
-                        # TODO:  set not anymore effekted on issue
-                
             except Exception as e:
                 # Might get thrown if Ticket was deleted or the auth token is not valid
                 logging.error("Error while looking for solved JIRA tickets: ")
