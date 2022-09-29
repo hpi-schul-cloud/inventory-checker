@@ -56,56 +56,99 @@ class JiraUtil:
 
         jira = JiraUtil.connect_jira(Constants.JIRA_HOST, Constants.JIRA_USER, Constants.JIRA_TOKEN)
 
+        count_jira_request = 0
+        count_new_solved_cves = 0
         for cve in self.saved_cves.values():
             if contains(cve.keys(), "notAffected"):
                 continue
 
             if not contains(cve.keys(), "issueId"):
                 continue
+            count_jira_request = count_jira_request +1
 
             try:
-                # issues = jira.search_issues('status = Done AND id = ' + cve["issueId"])
                 issue = jira.search_issues('id = ' + cve["issueId"])
-                logging.info(f"Info about ticket: {issue[0]} => {vars(issue[0])}")
-                logging.info(f"Info about ticket status: {issue[0].fields.status.name}")
-                if(len(issue[0].fields.issuelinks) == 0):
-                    logging.info(f"No linking Tickets in Ticket {issue[0].fields.status.name}")
-                else: 
-                    logging.info(f"Info about linking issues")
-                    link_counter = 1
-                    for link in issue[0].fields.issuelinks:
-                        
-                        if hasattr(link, "inwardIssue"):
-                            inwardIssue = link.inwardIssue
-                            logging.info(f"inwardIssue {link_counter}, link: {link}, vars: {vars(link)}")
-                            link_counter = link_counter + 1
-                            # if(link[0].raw.)
-                            # check name = is solved by
+                logging.info(f"Ticket: {issue[0]} => {vars(issue[0])}")
 
-                            # TODO: Check if attributes are available and catch errors
-                            logging.info(f"\t\tCheck if this Ticket is Done or Discarded?")
-                            logging.info(f"\t\t\tInfo about linkedIssue name: {link.type.inward}")
-                            logging.info(f"\t\t\tInfo about linkedIssue Ticket: {link.inwardIssue.key}")
-                            logging.info(f"\t\t\tInfo about linkedIssue status: {link.inwardIssue.fields.status.name}")
-                        
-
-
-
-                #logging.info(f"Info About ticket.fields.status: {issue[0].fields.status}")
-                
-                #logging.info(f"Info About ticket.fields.comment.comments: {issue[0].fields.comment.comments}")
-                #logging.info(f"Info About ticket.fields.summary: {issue[0].fields.summary}")
-                #logging.info(f"Info About ticket.fields.project.key: {issue[0].fields.project.key}")
-                #logging.info(f"Info About ticket.fields.reporter.displayName: {issue[0].fields.reporter.displayName}")
+                try:
+                    logging.info(f"Ticket status: {issue[0].fields.status.name}")
+                    logging.info("Ticket resolution: " + str(issue[0].fields.resolution))
+                except Exception as e :
+                    logging.error(f"Ticket resolution name or ticket status does not exist") 
+                    raise Exception(e)
 
                 
+                if(str(issue[0].fields.resolution) == "Done"):
+                    logging.info(f"Ticket {issue[0]} is Done. Mark as not affected.")
+                    count_new_solved_cves+=1
+                    # TODO:  set not anymore affected on issue
+                    cve["notAffected"] = True
+                    continue
+
+                
+                elif(str(issue[0].fields.resolution) == "Won't Do"):
+                    logging.info(f"Ticket {issue[0]} resolution is Won't Do. Mark as not affected.")
+                    count_new_solved_cves+=1
+                    # TODO:  set not anymore affekted on issue
+                    cve["notAffected"] = True
+                    continue
+
+
+                elif(str(issue[0].fields.resolution) == "Duplicate"):
+                    logging.info(f"Ticket {issue[0]} resolution is Duplicate. Checking linked Tickets.")
+
+                    
+                else:
+                    logging.info(f"\t Resolution of Ticket {issue[0]} is not accepted, can not be set as not affected.")
+                    # continue
+
+                
+                    if(len(issue[0].fields.issuelinks) == 0):
+                        logging.info(f"\tNo linked tickets in ticket {issue[0]}, can not be set as not affected.")
+                    else: 
+                        logging.info(f"\tLinked tickets:")
+                        flag_all_tickets_behind_is_solved_by_links_are_done = True
+                        flag_at_least_one_ticket_behind_is_solved_by_links_are_done = False
+                        for link in issue[0].fields.issuelinks:
+                            
+                        
+                            try:
+                                if not hasattr(link, "inwardIssue"):
+                                    logging.info(f"\t\t Skipping outward link: {link.type.inward}")
+                                    continue
+                                
+                                
+                                logging.info(f"\t\t Inward link name: {link.type.inward}")
+                                logging.info(f"\t\t\tLinked ticket: {link.inwardIssue.key}")
+                                logging.info(f"\t\t\t\tLinked ticket status: {link.inwardIssue.fields.status.name}")
+
+                                if(not (link.type.inward == "is solved by" and link.inwardIssue.fields.status.name == "Done")):
+                                    flag_all_tickets_behind_is_solved_by_links_are_done = False
+                                else:
+                                    flag_at_least_one_ticket_behind_is_solved_by_links_are_done = True
+                              
+                            except Exception as e :
+                                logging.error(f"link name, linked ticket name or linked Ticket status does not exist")
+                                logging.error(f"Ticket/CVE with resolution Duplicate can not be checked if it's Done")
+                                raise Exception(e)
+
+                        if(flag_all_tickets_behind_is_solved_by_links_are_done and flag_at_least_one_ticket_behind_is_solved_by_links_are_done):
+                            logging.info(f"\t All tickets behind is solved by links have the resolution done")   
+                            count_new_solved_cves+=1
+                            cve["notAffected"] = True
+                        else:
+                            logging.info(f"\t Not All tickets behind is solved by links have the resolution done, or there was no is solved by link in this ticket")
+                            logging.info(f"\tTicket {issue[0]}, can not be set as not affected.")         
+
             except Exception as e:
                 # Might get thrown if Ticket was deleted or the auth token is not valid
-                logging.error("Error while Looking for solved JIRA Tickets: ")
-                logging.error("Ticket was deleted or the auth token is not valid")
+                logging.error("Error while looking for solved JIRA tickets: ")
+                logging.error("Ticket was deleted, the auth token is not valid or there are missing attributes in the ticket")
                 logging.exception(e)
                 continue
 
         logging.info("Checked all CVE's") 
+        logging.info(f"{count_jira_request} requests for Jira were made (Tickets, that were still affected)")
+        logging.info(f"{count_new_solved_cves} are marked as solved in this poll")
 
         file_util.save_cves(self)
