@@ -81,7 +81,7 @@ class JiraUtil:
                     logging.info(f"Info about ticket resolution: {issue.fields.resolution.name}")       
 
                 logging.info(f"Info about ticket status: {issue.fields.status.name}")
-                #logging.info(f"Info about ticket resolution: {issue.fields.resolution.name}")
+                logging.info(f"Info about ticket resolution: {issueList.fields.resolution[0]}")
 
                 # issues = jira.search_issues('status = Done AND id = ' + cve["issueId"])
                 # TODO: if resolution Done -> set not anymore effekted on issue
