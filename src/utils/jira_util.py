@@ -71,13 +71,13 @@ class JiraUtil:
 
                 try:
                     logging.info(f"Ticket status: {issue[0].fields.status.name}")
-                    logging.info(f"Ticket resolution: {issue[0].fields.resolution}")
+                    logging.info(f"Ticket resolution: {issue[0].fields.resolution.name}")
                 except Exception as e :
                     logging.error(f"Ticket resolution name or ticket status does not exist") 
                     raise Exception(e)
 
                 
-                if(issue[0].fields.resolution == "Done"):
+                if(str(issue[0].fields.resolution) == "Done"):
                     logging.info(f"Ticket {issue[0]} is Done. Mark as not affected.")
 
                     # TODO:  set not anymore effekted on issue
