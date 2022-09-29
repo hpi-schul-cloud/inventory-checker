@@ -67,14 +67,14 @@ class JiraUtil:
 
             try:
                 issue = jira.search_issues('id = ' + cve["issueId"])
-                logging.info(f"Ticket: {issue[0]} => {vars(issue)}")
+                logging.info(f"Ticket: {issue[0]} => {vars(issue[0])}")
 
                 try:
                     logging.info(f"Ticket status: {issue[0].fields.status.name}")
                     logging.info(f"Ticket resolution: {issue[0].fields.resolution}")
-                except KeyError as e :
+                except Exception as e :
                     logging.error(f"Ticket resolution name or ticket status does not exist") 
-                    raise KeyError(e)
+                    raise Exception(e)
 
                 
                 if(issue[0].fields.resolution == "Done"):
@@ -100,51 +100,48 @@ class JiraUtil:
 
                     
                 else:
-                    logging.info(f"\t Resolution of Ticket {issue[0]} is not accepted, cant be set as not affected.")
+                    logging.info(f"\t Resolution of Ticket {issue[0]} is not accepted, can not be set as not affected.")
                     # continue
 
                 
                     if(len(issue[0].fields.issuelinks) == 0):
-                        logging.info(f"\tNo linking Tickets in Ticket {issue[0]}, cant be set as not affected.")
+                        logging.info(f"\tNo linked tickets in ticket {issue[0]}, can not be set as not affected.")
                     else: 
-                        logging.info(f"\tInfo about linking issues")
+                        logging.info(f"\tInfo about linked tickets")
                         flag_all_tickets_behind_is_solved_by_links_are_done = True
                         for link in issue[0].fields.issuelinks:
                             
 
                             try:
-                                logging.info(f"\t\tCheck if this Ticket has resolution typ is solved by")
+                                logging.info(f"\t\tCheck if this ticket has link type is solved by and ticket has resolution Done")
 
-                                logging.info(f"\t\tCheck if this Ticket has resolution Done")
                                 logging.info(f"\t\t\tInfo about link name/type: {link.type.inward}")
-                                logging.info(f"\t\t\tInfo about linked Ticket: {link.inwardIssue.key}")
+                                logging.info(f"\t\t\tInfo about linked ticket: {link.inwardIssue.key}")
                                 logging.info(f"\t\t\t\tInfo about linked Ticket status: {link.inwardIssue.fields.status.name}")
 
                                 if(not (link.type.inward == "is solved by" and link.inwardIssue.fields.status.name == "Done")):
                                     flag_all_tickets_behind_is_solved_by_links_are_done = False
                                     continue
-                                
-                                    
-
-                            except KeyError as e :
-                                logging.error(f"link name, linked Ticket name or linked Ticket status does not exist")
-                                logging.error(f"Ticket/CVE with resolution Duplicate cant be checked if it's Done")
-                                raise KeyError(e)    
+                              
+                            except Exception as e :
+                                logging.error(f"link name, linked ticket name or linked Ticket status does not exist")
+                                logging.error(f"Ticket/CVE with resolution Duplicate can not be checked if it's Done")
+                                raise Exception(e)    
 
                         if(flag_all_tickets_behind_is_solved_by_links_are_done):
                             logging.info(f"\t\t All tickets behind is solved by links have the resolution done")   
                             # TODO:  set not anymore effekted on issue
                         else:
                             logging.info(f"\t\t Not All tickets behind is solved by links have the resolution done, or there was no is solved by link in this ticket")
-                            logging.info(f"\tTicket {issue[0]}, cant be set as not affected.")         
+                            logging.info(f"\tTicket {issue[0]}, can not be set as not affected.")         
 
                         # TODO:  if  Inward link name = is solved by  &&  linked.tiket.status name == done
                         # TODO:  set not anymore effekted on issue
                 
             except Exception as e:
                 # Might get thrown if Ticket was deleted or the auth token is not valid
-                logging.error("Error while Looking for solved JIRA tickets: ")
-                logging.error("Ticket was deleted, the auth token is not valid or there are missing attributes in the Ticket")
+                logging.error("Error while looking for solved JIRA tickets: ")
+                logging.error("Ticket was deleted, the auth token is not valid or there are missing attributes in the ticket")
                 logging.exception(e)
                 continue
 
