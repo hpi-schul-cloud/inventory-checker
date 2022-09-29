@@ -67,43 +67,82 @@ class JiraUtil:
 
             try:
                 issue = jira.search_issues('id = ' + cve["issueId"])
-                logging.info(f"Info about ticket: {issue} => {vars(issue)}")
+                logging.info(f"Ticket: {issue[0]} => {vars(issue)}")
 
                 try:
-                    logging.info(f"Info about ticket status: {issue[0].fields.status.name}")
-                    logging.info(f"Info about ticket resolution: {issue[0].fields.resolution}")
+                    logging.info(f"Ticket status: {issue[0].fields.status.name}")
+                    logging.info(f"Ticket resolution: {issue[0].fields.resolution}")
                 except KeyError as e :
-                    logging.error(f"Info about ticket resolution name or ticket status does not exist") 
+                    logging.error(f"Ticket resolution name or ticket status does not exist") 
                     raise KeyError(e)
 
-                # issues = jira.search_issues('status = Done AND id = ' + cve["issueId"])
-                # TODO: if resolution Done -> set not anymore effekted on issue
+                
+                if(issue[0].fields.resolution == "Done"):
+                    logging.info(f"Ticket {issue[0]} is Done. Mark as not affected.")
+
+                    # TODO:  set not anymore effekted on issue
+                    continue
+
+
                 # TODO: if resolution Wont'do
                     # TODO:  set not anymore effekted on issue
+                
+                elif(issue[0].fields.resolution == "Won't Do"):
+                    logging.info(f"Ticket {issue[0]} resolution is Won't Do. Mark as not affected.")
+
+                    # TODO:  set not anymore effekted on issue
+                    continue
 
 
                 # TODO: if resolution Duplicate -> this
-                
-                
-                if(len(issue[0].fields.issuelinks) == 0):
-                    logging.info(f"\tNo linking Tickets in Ticket {issue[0].fields.status.name}")
-                else: 
-                    logging.info(f"\tInfo about linking issues")
-                    for link in issue[0].fields.issuelinks:
-                        
+                elif(issue[0].fields.resolution == "Duplicate"):
+                    logging.info(f"Ticket {issue[0]} resolution is Duplicate. Checking linked Tickets.")
 
-                        try:
-                            logging.info(f"\t\tCheck if this Ticket is Done or Discarded?")
-                            logging.info(f"\t\t\tInfo about link name/type: {link.type.inward}")
-                            logging.info(f"\t\t\tInfo about linked Ticket: {link.inwardIssue.key}")
-                            logging.info(f"\t\t\t\tInfo about linked Ticket status: {link.inwardIssue.fields.status.name}")
-                        except KeyError as e :
-                            logging.error(f"link name, linked Ticket name or linked Ticket status does not exist")
-                            logging.error(f"Ticket/CVE with resolution Duplicate cant be checked if it's Done")
-                            raise KeyError(e)                        
+                    # TODO:  set not anymore effekted on issue
+                    
+                
+                    if(len(issue[0].fields.issuelinks) == 0):
+                        logging.info(f"\tNo linking Tickets in Ticket {issue[0].fields.status.name}, cant be set as not affected.")
+                    else: 
+                        logging.info(f"\tInfo about linking issues")
+                        for link in issue[0].fields.issuelinks:
+                            
 
-                        # TODO:  if  Inward link name = is solved by  &&  linked.tiket.status name == done
-                        # TODO:  set not anymore effekted on issue
+                            try:
+                                logging.info(f"\t\tCheck if this Ticket is Done or Discarded?")
+                                logging.info(f"\t\t\tInfo about link name/type: {link.type.inward}")
+                                logging.info(f"\t\t\tInfo about linked Ticket: {link.inwardIssue.key}")
+                                logging.info(f"\t\t\t\tInfo about linked Ticket status: {link.inwardIssue.fields.status.name}")
+                            except KeyError as e :
+                                logging.error(f"link name, linked Ticket name or linked Ticket status does not exist")
+                                logging.error(f"Ticket/CVE with resolution Duplicate cant be checked if it's Done")
+                                raise KeyError(e)                        
+
+                            # TODO:  if  Inward link name = is solved by  &&  linked.tiket.status name == done
+                            # TODO:  set not anymore effekted on issue
+                else:
+                    logging.info(f"\t Resolution of Ticket {issue[0].fields.status.name} is not accepted, cant be set as not affected.")
+
+                
+                    if(len(issue[0].fields.issuelinks) == 0):
+                        logging.info(f"\tNo linking Tickets in Ticket {issue[0].fields.status.name}, cant be set as not affected.")
+                    else: 
+                        logging.info(f"\tInfo about linking issues")
+                        for link in issue[0].fields.issuelinks:
+                            
+
+                            try:
+                                logging.info(f"\t\tCheck if this Ticket is Done or Discarded?")
+                                logging.info(f"\t\t\tInfo about link name/type: {link.type.inward}")
+                                logging.info(f"\t\t\tInfo about linked Ticket: {link.inwardIssue.key}")
+                                logging.info(f"\t\t\t\tInfo about linked Ticket status: {link.inwardIssue.fields.status.name}")
+                            except KeyError as e :
+                                logging.error(f"link name, linked Ticket name or linked Ticket status does not exist")
+                                logging.error(f"Ticket/CVE with resolution Duplicate cant be checked if it's Done")
+                                raise KeyError(e)                        
+
+                            # TODO:  if  Inward link name = is solved by  &&  linked.tiket.status name == done
+                            # TODO:  set not anymore effekted on issue
                 
             except Exception as e:
                 # Might get thrown if Ticket was deleted or the auth token is not valid
