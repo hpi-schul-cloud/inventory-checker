@@ -81,7 +81,7 @@ class JiraUtil:
                         # Check if this Ticket is Done or Discarded.
                         logging.info(f"Check if this Ticket is Done or Discarded?")
                         try:
-                            linkedIssue = jira.search_issues('key = ' + inwardIssue)
+                            linkedIssue = jira.search_issues('key = ' + inwardIssue.key)
                             logging.info(f"Info about linkedIssue: {issue[0]}")
                             logging.info(f"Info about linkedIssue status: {issue[0].fields.status.name}")
                         except Exception as e:
