@@ -2,11 +2,10 @@ from datetime import datetime
 from operator import contains
 
 import requests
-from inventory_checker import InventoryChecker
 from constants import Constants
 
 
-def fetch_cves(invch: InventoryChecker):
+def fetch_cves(invch):
     root: dict = requests.get(Constants.CISA_CVE_URL).json()
 
     for child in root["vulnerabilities"]:

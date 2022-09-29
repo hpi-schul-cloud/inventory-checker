@@ -6,7 +6,6 @@ from pathlib import Path
 from constants import Constants
 from genericpath import exists
 
-from inventory_checker import InventoryChecker
 
 
 def load_versions():
@@ -23,7 +22,7 @@ def load_versions():
     return json.loads(s)
 
 
-def load_cves(invch: InventoryChecker):
+def load_cves(invch):
     if not exists(Constants.CVE_FILE_PATH):
         invch.initial_cve_fetching = True
         return {}
@@ -43,7 +42,7 @@ def create_log_dir():
         Path(Constants.LOG_DIR_PATH).mkdir(parents=True, exist_ok=True)
 
 
-def clean_old_cves(invch: InventoryChecker):
+def clean_old_cves(invch):
     cve_list = load_cves(invch).values()
     if len(cve_list) == 0:
         return
@@ -64,14 +63,14 @@ def clean_old_cves(invch: InventoryChecker):
     logging.info(f"Cleaned {len(cve_list) - len(invch.new_cves)} CVE's!")
 
 
-def save_cves(invch: InventoryChecker):
+def save_cves(invch):
     file = open(Constants.CVE_FILE_PATH, "w")
     invch.saved_cves.update(invch.new_cves)
     file.write(json.dumps(invch.saved_cves))
     file.close()
 
 
-def clean_old_versions(invch: InventoryChecker):
+def clean_old_versions(invch):
     version_list = load_versions()
     if len(version_list) == 0:
         return
@@ -91,7 +90,7 @@ def clean_old_versions(invch: InventoryChecker):
     logging.info(f"Cleaned {len(version_list) - len(invch.new_versions)} Versions!")
 
 
-def save_versions(invch: InventoryChecker):
+def save_versions(invch):
     file = open(Constants.VERSION_FILE_PATH, "w")
     invch.saved_versions = invch.saved_versions + invch.new_versions
     file.write(json.dumps(invch.saved_versions))

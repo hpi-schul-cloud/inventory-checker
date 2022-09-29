@@ -3,11 +3,10 @@ from operator import contains
 
 import requests
 from constants import Constants
-from inventory_checker import InventoryChecker
 from utils.severity_util import SeverityUtil
 
 
-def fetch_cves(invch: InventoryChecker):
+def fetch_cves(invch):
     root: dict = requests.get(Constants.CERT_CVE_URL).json()
 
     for child in root["content"]:

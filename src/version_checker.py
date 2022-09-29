@@ -6,11 +6,10 @@ from dxf import DXF, exceptions
 
 from constants import Constants
 import notifier
-from inventory_checker import InventoryChecker
 import utils.file_util
 
 
-def check_versions(invch: InventoryChecker):
+def check_versions(invch):
     logging.info("")
     logging.info("~~~~~~~~~~~~~~~~~~~~~~~")
     logging.info("")

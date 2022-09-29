@@ -4,11 +4,10 @@ from operator import contains
 
 import requests
 from constants import Constants
-from inventory_checker import InventoryChecker
 from utils.severity_util import SeverityUtil
 
 
-def fetch_cves(invch: InventoryChecker):
+def fetch_cves(invch):
     response = requests.get(Constants.VULDB_CVE_URL)
     root = ET.fromstring(response.content)
 

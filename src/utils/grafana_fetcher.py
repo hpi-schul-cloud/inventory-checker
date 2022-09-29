@@ -1,10 +1,8 @@
 from operator import contains
 
 import requests
-from prometheus_client import Gauge
 
 from constants import Constants
-from inventory_checker import InventoryChecker
 
 
 def fetch_prometheus_data():
@@ -30,7 +28,7 @@ def fetch_prometheus_data():
     return request.json()
 
 
-def load_inventory(invch: InventoryChecker):
+def load_inventory(invch):
     response = fetch_prometheus_data()
 
     invch.images = []
