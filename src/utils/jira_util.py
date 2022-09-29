@@ -71,7 +71,7 @@ class JiraUtil:
                 logging.info(f"Info about ticket: {issue} => {vars(issue)}")
 
                 if not hasattr(issue, "fields.status.name"):
-                    ogging.error(f"Info about ticket status does not exist")
+                    logging.error(f"Info about ticket status does not exist")
 
                 if not hasattr(issue, "fields.resolution"):
                     logging.error(f"Info about ticket resolution does not exist") 
