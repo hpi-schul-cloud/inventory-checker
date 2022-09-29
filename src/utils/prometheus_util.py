@@ -32,7 +32,7 @@ class PrometheusUtil:
 
 class Status:
     INVCH_STATUS = Info(
-        "invch-status",
+        "invch_status",
         "Status of the invch components",
     )
 
