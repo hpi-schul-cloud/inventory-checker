@@ -79,11 +79,11 @@ class JiraUtil:
                         logging.info("\tInward: " + inwardIssue.key)
                         # InwardIssue.key is the Ticketnumber e.g. OPS-1883
                         # Check if this Ticket is Done or Discarded.
-                        logging.info(f"Check if this Ticket is Done or Discarded?")
+                        logging.info(f"\t\tCheck if this Ticket is Done or Discarded?")
                         try:
                             linkedIssue = jira.search_issues('key = ' + inwardIssue.key)
-                            logging.info(f"Info about linkedIssue: {issue[0]}")
-                            logging.info(f"Info about linkedIssue status: {issue[0].fields.status.name}")
+                            logging.info(f"\t\t\tInfo about linkedIssue: {issue[0]}")
+                            logging.info(f"\t\t\tInfo about linkedIssue status: {issue[0].fields.status.name}")
                         except Exception as e:
                             logging.error("Error while Looking for linked JIRA Tickets: ")
                             logging.error("Ticket was deleted or the auth token is not valid")
