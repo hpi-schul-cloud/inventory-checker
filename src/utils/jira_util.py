@@ -56,14 +56,15 @@ class JiraUtil:
 
         jira = JiraUtil.connect_jira(Constants.JIRA_HOST, Constants.JIRA_USER, Constants.JIRA_TOKEN)
 
-        countJiraRequest = 0
+        count_jira_request = 0
+        count_new_solved_cves = 0
         for cve in self.saved_cves.values():
             if contains(cve.keys(), "notAffected"):
                 continue
 
             if not contains(cve.keys(), "issueId"):
                 continue
-            countJiraRequest = countJiraRequest +1
+            count_jira_request = count_jira_request +1
 
             try:
                 issue = jira.search_issues('id = ' + cve["issueId"])
@@ -71,7 +72,7 @@ class JiraUtil:
 
                 try:
                     logging.info(f"Ticket status: {issue[0].fields.status.name}")
-                    logging.info("Ticket resolution:" + str(issue[0].fields.resolution))
+                    logging.info("Ticket resolution: " + str(issue[0].fields.resolution))
                 except Exception as e :
                     logging.error(f"Ticket resolution name or ticket status does not exist") 
                     raise Exception(e)
@@ -79,23 +80,20 @@ class JiraUtil:
                 
                 if(str(issue[0].fields.resolution) == "Done"):
                     logging.info(f"Ticket {issue[0]} is Done. Mark as not affected.")
-
-                    # TODO:  set not anymore effekted on issue
+                    count_new_solved_cves = count_new_solved_cves +1
+                    # TODO:  set not anymore affected on issue
                     continue
 
-
-                # TODO: if resolution Wont'do
-                    # TODO:  set not anymore effekted on issue
                 
-                elif(issue[0].fields.resolution == "Won't Do"):
+                elif(str(issue[0].fields.resolution) == "Won't Do"):
                     logging.info(f"Ticket {issue[0]} resolution is Won't Do. Mark as not affected.")
-
-                    # TODO:  set not anymore effekted on issue
+                    count_new_solved_cves = count_new_solved_cves +1
+                    # TODO:  set not anymore affekted on issue
                     continue
 
 
                 # TODO: if resolution Duplicate -> this
-                elif(issue[0].fields.resolution == "Duplicate"):
+                elif(str(issue[0].fields.resolution) == "Duplicate"):
                     logging.info(f"Ticket {issue[0]} resolution is Duplicate. Checking linked Tickets.")
 
                     
@@ -111,13 +109,17 @@ class JiraUtil:
                         flag_all_tickets_behind_is_solved_by_links_are_done = True
                         for link in issue[0].fields.issuelinks:
                             
+                            if not hasattr(link, "inwardIssue"):
+                                logging.info(f"\t\t skipping outward link: {link.type.inward}")
+                                continue
+                                
 
                             try:
                                 logging.info(f"\t\tCheck if this ticket has link type is solved by and ticket has resolution Done")
 
                                 logging.info(f"\t\t\tInfo about link name/type: {link.type.inward}")
                                 logging.info(f"\t\t\tInfo about linked ticket: {link.inwardIssue.key}")
-                                logging.info(f"\t\t\t\tInfo about linked Ticket status: {link.inwardIssue.fields.status.name}")
+                                logging.info(f"\t\t\t\tInfo about linked ticket status: {link.inwardIssue.fields.status.name}")
 
                                 if(not (link.type.inward == "is solved by" and link.inwardIssue.fields.status.name == "Done")):
                                     flag_all_tickets_behind_is_solved_by_links_are_done = False
@@ -129,10 +131,11 @@ class JiraUtil:
                                 raise Exception(e)    
 
                         if(flag_all_tickets_behind_is_solved_by_links_are_done):
-                            logging.info(f"\t\t All tickets behind is solved by links have the resolution done")   
+                            logging.info(f"\t All tickets behind is solved by links have the resolution done")   
+                            count_new_solved_cves = count_new_solved_cves +1
                             # TODO:  set not anymore effekted on issue
                         else:
-                            logging.info(f"\t\t Not All tickets behind is solved by links have the resolution done, or there was no is solved by link in this ticket")
+                            logging.info(f"\t Not All tickets behind is solved by links have the resolution done, or there was no is solved by link in this ticket")
                             logging.info(f"\tTicket {issue[0]}, can not be set as not affected.")         
 
                         # TODO:  if  Inward link name = is solved by  &&  linked.tiket.status name == done
@@ -146,6 +149,7 @@ class JiraUtil:
                 continue
 
         logging.info("Checked all CVE's") 
-        logging.info(f"{countJiraRequest} requests for Jira were made (Tickets, that were still affected)")
+        logging.info(f"{count_jira_request} requests for Jira were made (Tickets, that were still affected)")
+        logging.info(f"{count_new_solved_cves} are marked as solved in this poll")
 
         FileUtil.save_cves(self)
