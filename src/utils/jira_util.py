@@ -72,8 +72,10 @@ class JiraUtil:
                     logging.info(f"No linking Tickets in Ticket {issue[0].fields.status.name}")
                 else: 
                     logging.info(f"Info about linking issues")
+                    link_counter = 1
                     for link in issue[0].fields.issuelinks:
-                        logging.info(f"link")
+                        logging.info(f"link {link_counter}, linkname {link.name}")
+                        link_counter = link_counter + 1
                         if hasattr(link, "outwardIssue"):
                             outwardIssue = link.outwardIssue
                             logging.info("\tOutward: " + outwardIssue.key)
