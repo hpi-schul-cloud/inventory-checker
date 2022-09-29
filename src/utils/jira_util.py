@@ -26,7 +26,7 @@ class JiraUtil:
             try:
                 issue = jira.create_issue(project=Constants.JIRA_PROJECT_ID, summary=title, description=description, issuetype={"name": Constants.JIRA_ISSUE_TYPE}, priority={"name": SeverityUtil.transformSeverityToJiraPriority(cve["severity"])})
                 self.new_cves[cve["name"]]["issueId"] = issue.id
-                logging.info(f"Created Ticket: {cve}")
+                logging.info(f"Created issue: {issue} with Ticket: {cve}")
             except Exception as e:
                 logging.error("Error while creating JIRA Tickets: ")
                 logging.info(f"Ticket: {cve}")
@@ -49,7 +49,7 @@ class JiraUtil:
 
     def check_jira_issues(self):
         if not Constants.JIRA_HOST or not Constants.JIRA_TOKEN or not Constants.JIRA_USER or not Constants.JIRA_PROJECT_ID:
-            logging.info("No Rocketchat message will be sent. ROCKETCHAT_WEBHOOK is not loaded.")
+            logging.info("No Rocketchat message will be sent. ROCKETCHAT_WEBHOOK env. var. is not loaded.")
             return
 
         logging.info("Looking for solved JIRA Tickets...")
@@ -65,8 +65,27 @@ class JiraUtil:
 
             try:
                 # issues = jira.search_issues('status = Done AND id = ' + cve["issueId"])
-                issues = jira.search_issues('id = ' + cve["issueId"])
-                logging.info(f"Info About ticket: {issues}")
+                issue = jira.search_issues('id = ' + cve["issueId"])
+                logging.info(f"Info About ticket: {issue}")
+                logging.info(f"for link in issue.fields.issuelinks:")
+                for link in issue.fields.issuelinks:
+                    logging.info(f"link")
+                    if hasattr(link, "outwardIssue"):
+                        outwardIssue = link.outwardIssue
+                        logging.info("\tOutward: " + outwardIssue.key)
+                    if hasattr(link, "inwardIssue"):
+                        inwardIssue = link.inwardIssue
+                        logging.info("\tInward: " + inwardIssue.key)
+                logging.info(f"Info About ticket.fields: {issue.fields}")
+                logging.info(f"Info About ticket.fields.status: {issue.fields.status}")
+                logging.info(f"Info About ticket.fields.status.name: {issue.fields.status.name}")
+                logging.info(f"Info About ticket.fields.issuetype.name: {issue.fields.issuetype.name}")
+                logging.info(f"Info About ticket.fields.comment.comments: {issue.fields.comment.comments}")
+                logging.info(f"Info About ticket.fields.summary: {issue.fields.summary}")
+                logging.info(f"Info About ticket.fields.project.key: {issue.fields.project.key}")
+                logging.info(f"Info About ticket.fields.reporter.displayName: {issue.fields.reporter.displayName}")
+
+                
             except Exception as e:
                 # Might get thrown if Ticket was deleted or the auth token is not valid
                 logging.error("Error while Looking for solved JIRA Tickets: ")
