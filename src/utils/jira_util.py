@@ -56,56 +56,77 @@ class JiraUtil:
 
         jira = JiraUtil.connect_jira(Constants.JIRA_HOST, Constants.JIRA_USER, Constants.JIRA_TOKEN)
 
+        countJiraRequest = 0
         for cve in self.saved_cves.values():
             if contains(cve.keys(), "notAffected"):
                 continue
 
             if not contains(cve.keys(), "issueId"):
                 continue
+            countJiraRequest = countJiraRequest +1
 
             try:
-                # issues = jira.search_issues('status = Done AND id = ' + cve["issueId"])
                 issue = jira.search_issues('id = ' + cve["issueId"])
                 logging.info(f"Info about ticket: {issue[0]} => {vars(issue[0])}")
+
+                if not hasattr(issue[0], "fields.status.name"):
+                                logging.error(f"Info about ticket status does not exist")
+
+                if not hasattr(issue[0], "fields.resolution.name"):
+                                logging.error(f"Info about ticket resolution does not exist")            
+
                 logging.info(f"Info about ticket status: {issue[0].fields.status.name}")
+                logging.info(f"Info about ticket resolution: {issue[0].fields.resolution.name}")
+
+                # issues = jira.search_issues('status = Done AND id = ' + cve["issueId"])
+                # TODO: if resolution Done -> set not anymore effekted on issue
+                # TODO: if resolution Wont'do
+                    # TODO:  set not anymore effekted on issue
+
+
+                # TODO: if resolution Duplicate -> this
+                
+                
                 if(len(issue[0].fields.issuelinks) == 0):
-                    logging.info(f"No linking Tickets in Ticket {issue[0].fields.status.name}")
+                    logging.info(f"\tNo linking Tickets in Ticket {issue[0].fields.status.name}")
                 else: 
-                    logging.info(f"Info about linking issues")
-                    link_counter = 1
+                    logging.info(f"\tInfo about linking issues")
                     for link in issue[0].fields.issuelinks:
                         
                         if hasattr(link, "inwardIssue"):
                             inwardIssue = link.inwardIssue
-                            logging.info(f"inwardIssue {link_counter}, link: {link}, vars: {vars(link)}")
-                            link_counter = link_counter + 1
-                            # if(link[0].raw.)
-                            # check name = is solved by
+                            logging.info(f"\tinwardIssue-link: {link}, vars: {vars(link)}")
+                            
+                            if not hasattr(link, "type.inward"):
+                                logging.error(f"link name does not exist")
+                                #TODO: Fehlerabfangen
+                                continue
 
-                            # TODO: Check if attributes are available and catch errors
+                            if not hasattr(link, "inwardIssue.key"):
+                                logging.error(f"linked Ticket name does not exist")
+                                #TODO: Fehlerabfangen
+                                continue
+
+                            if not hasattr(link, "inwardIssue.fields.status.name"):
+                                logging.error(f"linked Ticket status does not exist")
+                                #TODO: Fehlerabfangen
+                                continue
                             logging.info(f"\t\tCheck if this Ticket is Done or Discarded?")
-                            logging.info(f"\t\t\tInfo about linkedIssue name: {link.type.inward}")
-                            logging.info(f"\t\t\tInfo about linkedIssue Ticket: {link.inwardIssue.key}")
-                            logging.info(f"\t\t\tInfo about linkedIssue status: {link.inwardIssue.fields.status.name}")
-                        
+                            logging.info(f"\t\t\tInfo about link name/type: {link.type.inward}")
+                            logging.info(f"\t\t\tInfo about linked Ticket: {link.inwardIssue.key}")
+                            logging.info(f"\t\t\t\tInfo about linked Ticket status: {link.inwardIssue.fields.status.name}")
 
-
-
-                #logging.info(f"Info About ticket.fields.status: {issue[0].fields.status}")
-                
-                #logging.info(f"Info About ticket.fields.comment.comments: {issue[0].fields.comment.comments}")
-                #logging.info(f"Info About ticket.fields.summary: {issue[0].fields.summary}")
-                #logging.info(f"Info About ticket.fields.project.key: {issue[0].fields.project.key}")
-                #logging.info(f"Info About ticket.fields.reporter.displayName: {issue[0].fields.reporter.displayName}")
-
+                            # TODO:  if  Inward link name = is solved by  &&  linked.tiket.status name == done
+                            # TODO:  set not anymore effekted on issue
                 
             except Exception as e:
                 # Might get thrown if Ticket was deleted or the auth token is not valid
                 logging.error("Error while Looking for solved JIRA Tickets: ")
-                logging.error("Ticket was deleted or the auth token is not valid")
+                logging.error("Ticket was deleted, the auth token is not valid or there are missing attributes in the Ticket")
                 logging.exception(e)
                 continue
 
         logging.info("Checked all CVE's") 
+        logging.info(f"{countJiraRequest} requests for Jira were made (Tickets, that were still affected)")
 
         FileUtil.save_cves(self)
