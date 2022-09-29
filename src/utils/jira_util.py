@@ -68,27 +68,30 @@ class JiraUtil:
                 issue = jira.search_issues('id = ' + cve["issueId"])
                 logging.info(f"Info about ticket: {issue[0]}")
                 logging.info(f"Info about ticket status: {issue[0].fields.status.name}")
-                logging.info(f"Info about linking issues")
-                for link in issue[0].fields.issuelinks:
-                    logging.info(f"link")
-                    if hasattr(link, "outwardIssue"):
-                        outwardIssue = link.outwardIssue
-                        logging.info("\tOutward: " + outwardIssue.key)
-                    if hasattr(link, "inwardIssue"):
-                        inwardIssue = link.inwardIssue
-                        logging.info("\tInward: " + inwardIssue.key)
-                        # InwardIssue.key is the Ticketnumber e.g. OPS-1883
-                        # Check if this Ticket is Done or Discarded.
-                        logging.info(f"\t\tCheck if this Ticket is Done or Discarded?")
-                        try:
-                            linkedIssue = jira.search_issues('key = ' + inwardIssue.key)
-                            logging.info(f"\t\t\tInfo about linkedIssue: {issue[0]}")
-                            logging.info(f"\t\t\tInfo about linkedIssue status: {issue[0].fields.status.name}")
-                        except Exception as e:
-                            logging.error("Error while Looking for linked JIRA Tickets: ")
-                            logging.error("Ticket was deleted or the auth token is not valid")
-                            logging.exception(e)
-                            continue
+                if(len(issue[0].fields.issuelinks) == 0):
+                    logging.info(f"No linking Tickets in Ticket {issue[0].fields.status.name}")
+                else: 
+                    logging.info(f"Info about linking issues")
+                    for link in issue[0].fields.issuelinks:
+                        logging.info(f"link")
+                        if hasattr(link, "outwardIssue"):
+                            outwardIssue = link.outwardIssue
+                            logging.info("\tOutward: " + outwardIssue.key)
+                        if hasattr(link, "inwardIssue"):
+                            inwardIssue = link.inwardIssue
+                            logging.info("\tInward: " + inwardIssue.key)
+                            # InwardIssue.key is the Ticketnumber e.g. OPS-1883
+                            # Check if this Ticket is Done or Discarded.
+                            logging.info(f"\t\tCheck if this Ticket is Done or Discarded?")
+                            try:
+                                linkedIssue = jira.search_issues('key = ' + inwardIssue.key)
+                                logging.info(f"\t\t\tInfo about linkedIssue: {inwardIssue[0]}")
+                                logging.info(f"\t\t\tInfo about linkedIssue status: {inwardIssue[0].fields.status.name}")
+                            except Exception as e:
+                                logging.error("Error while Looking for linked JIRA Tickets: ")
+                                logging.error("Ticket was deleted or the auth token is not valid")
+                                logging.exception(e)
+                                continue
 
 
 
