@@ -1,9 +1,9 @@
+from enum import Enum
 import logging
 import json
-from ast import Constant
 
-from constants import Constants
 from prometheus_client import Info, start_http_server
+from constants import Constants
 
 
 class PrometheusUtil:
@@ -28,3 +28,31 @@ class PrometheusUtil:
                 "uses_rocketchat": str(True) if Constants.ROCKETCHAT_WEBHOOK != None else str(False)
             }
         )
+
+
+class Status:
+    INVCH_STATUS = Info(
+        "invch-status",
+        "Status of the invch components",
+    )
+
+    class Component(Enum):
+        grafana = "grafana_available"
+        initial_fetch = "initial_cve_fetch_successfull"
+        nvd = "nvd_available"
+        cisa = "cisa_available"
+        cert = "cert_bund_available"
+        rocketchat = "rocketchat_available"
+        jira = "jira_available"
+
+    def __init__(self) -> None:
+        self.status = {}
+        # Set default values
+        for element in Status.Component:
+            self.status[element.value] = "-"
+
+    def set_component_success(self, component: Component, state: bool):
+        self.status[component.value] = str(state)
+
+    def send_status(self):
+        Status.INVCH_STATUS.info(self.status)

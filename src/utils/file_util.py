@@ -10,7 +10,7 @@ from genericpath import exists
 class FileUtil:
     def load_cves(self):
         if not exists(Constants.CVE_FILE_PATH):
-            self.first_time = True
+            self.initial_cve_fetching = True
             return {}
 
         file = open(Constants.CVE_FILE_PATH)

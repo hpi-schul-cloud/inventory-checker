@@ -21,7 +21,7 @@ from notifier import Notifier
 from utils.file_util import FileUtil
 from utils.grafana_fetcher import GrafanaFetcher
 from utils.jira_util import JiraUtil
-from utils.prometheus_util import PrometheusUtil
+from utils.prometheus_util import PrometheusUtil, Status
 from version_checker import VersionChecker
 
 
@@ -32,6 +32,8 @@ class InventoryChecker:
 
     @REQUEST_TIME.time()
     def run(self):
+        status = Status()
+
         self.offset = (
             time.timezone if (time.localtime().tm_isdst == 0) else time.altzone
         )
@@ -41,10 +43,17 @@ class InventoryChecker:
         logging.info("---------------------------------------------------------------")
         logging.info("Creating log directory...")
         FileUtil.create_log_dir(self)
-
         logging.info("---------------------------------------------------------------")
         logging.info("Loading keywords and versions...")
-        self.inventory = GrafanaFetcher.load_inventory(self)
+        try:
+            self.inventory = GrafanaFetcher.load_inventory(self)
+            status.set_component_success(Status.Component.grafana, True)
+        except Exception as e:
+            logging.error("Loading inventory from grafana failed, skipping this run.")
+            logging.exception(e)
+            status.set_component_success(Status.Component.grafana, False)
+            status.send_status()
+            return
 
         logging.info("---------------------------------------------------------------")
         logging.info("Cleaning old CVE's...")
@@ -68,11 +77,16 @@ class InventoryChecker:
 
         self.new_cves = {}
 
+        partial_fetching_failure = False
+
         try:
             CisaCVE.fetch_cves(self)
+            status.set_component_success(Status.Component.cisa, True)
         except Exception as e:
             logging.error("Error while fetching Cisa CVE Source: ")
             logging.exception(e)
+            status.set_component_success(Status.Component.cisa, False)
+            partial_fetching_failure = True
 
         # No longer used because VuldbCVE is chargeable. The CVE's are also displayed in NVD.
         # try:
@@ -83,21 +97,29 @@ class InventoryChecker:
 
         try:
             CertCVE.fetch_cves(self)
+            status.set_component_success(Status.Component.cert, True)
         except Exception as e:
             logging.error("Error while fetching Cert CVE Source: ")
             logging.exception(e)
+            status.set_component_success(Status.Component.cert, False)
+            partial_fetching_failure = True
 
         try:
             # Needs to be last to fetch versions of affected products
             NvdCVE.fetch_cves(self)
+            status.set_component_success(Status.Component.nvd, True)
         except Exception as e:
             logging.error("Error while fetching Nvd CVE Source: ")
             logging.exception(e)
+            status.set_component_success(Status.Component.nvd, False)
+            partial_fetching_failure = True
 
         new_cve_size = len(self.new_cves)
 
         # Don't post new cve's because it would spam quiet a lot
-        if not hasattr(self, "first_time"):
+        if not hasattr(self, "initial_cve_fetching"):
+            # Initial fetch already done
+            status.set_component_success(Status.Component.initial_fetch, True)
             if new_cve_size == 0:
                 logging.info(f"No new CVE's within last {Constants.INTERVAL.days} days")
             else:
@@ -109,18 +131,27 @@ class InventoryChecker:
                     logging.info("")
 
                 logging.info("Posting new CVE's...")
+                # TODO: Check status
                 Notifier.post_cve(self.new_cves)
                 JiraUtil.create_jira_issues(self)
         else:
-            logging.info("Skipping because it's the first time starting up...")
-            for cve in self.new_cves.values():
-                self.new_cves[cve["name"]]["notAffected"] = True
             Notifier.post_message("Connected new Instance")
+            if partial_fetching_failure:
+                status.set_component_success(Status.Component.initial_fetch, False)
+                logging.warning("Couldn't fetch from all CVE sources in first run. Not saving CVEs to avoid "
+                                f"duplicate entries. Trying again in {Constants.SCHEDULER_INTERVAL} minutes.")
+            else:
+                status.set_component_success(Status.Component.initial_fetch, True)
+                logging.info("Skipping because it's the first time starting up...")
+                for cve in self.new_cves.values():
+                    self.new_cves[cve["name"]]["notAffected"] = True
 
         # save new cves
         FileUtil.save_cves(self)
 
         JiraUtil.check_jira_issues(self)
+
+        status.send_status()
 
         self.update_prometheus()
 
