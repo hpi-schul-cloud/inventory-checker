@@ -4,7 +4,7 @@ from operator import contains
 from constants import Constants
 from jira import JIRA
 
-from utils.file_util import FileUtil
+import utils.file_util as file_util
 from utils.severity_util import SeverityUtil
 
 
@@ -108,4 +108,4 @@ class JiraUtil:
 
         logging.info("Checked all CVE's") 
 
-        FileUtil.save_cves(self)
+        file_util.save_cves(self)
