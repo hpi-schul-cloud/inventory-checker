@@ -1,4 +1,3 @@
-from hashlib import _VarLenHash
 import logging
 from operator import contains
 
