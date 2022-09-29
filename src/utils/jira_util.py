@@ -82,7 +82,7 @@ class JiraUtil:
                     logging.info(f"Ticket {issue[0]} is Done. Mark as not affected.")
                     count_new_solved_cves+=1
                     # TODO:  set not anymore affected on issue
-                    #cve["notAffected"] = True
+                    cve["notAffected"] = True
                     continue
 
                 
@@ -90,7 +90,7 @@ class JiraUtil:
                     logging.info(f"Ticket {issue[0]} resolution is Won't Do. Mark as not affected.")
                     count_new_solved_cves+=1
                     # TODO:  set not anymore affekted on issue
-                    #cve["notAffected"] = True
+                    cve["notAffected"] = True
                     continue
 
 
@@ -108,31 +108,34 @@ class JiraUtil:
                     else: 
                         logging.info(f"\tLinked tickets:")
                         flag_all_tickets_behind_is_solved_by_links_are_done = True
+                        flag_at_least_one_ticket_behind_is_solved_by_links_are_done = False
                         for link in issue[0].fields.issuelinks:
                             
-                            if not hasattr(link, "inwardIssue"):
-                                logging.info(f"\t\t Skipping outward link: {link.type.inward}")
-                                continue
-                                
-
+                        
                             try:
-                                logging.info(f"\t\t\tLink name/type: {link.type.inward}")
+                                if not hasattr(link, "inwardIssue"):
+                                    logging.info(f"\t\t Skipping outward link: {link.type.inward}")
+                                    continue
+                                
+                                
+                                logging.info(f"\t\t Inward link name: {link.type.inward}")
                                 logging.info(f"\t\t\tLinked ticket: {link.inwardIssue.key}")
                                 logging.info(f"\t\t\t\tLinked ticket status: {link.inwardIssue.fields.status.name}")
 
                                 if(not (link.type.inward == "is solved by" and link.inwardIssue.fields.status.name == "Done")):
                                     flag_all_tickets_behind_is_solved_by_links_are_done = False
-                                    continue
+                                else:
+                                    flag_at_least_one_ticket_behind_is_solved_by_links_are_done = True
                               
                             except Exception as e :
                                 logging.error(f"link name, linked ticket name or linked Ticket status does not exist")
                                 logging.error(f"Ticket/CVE with resolution Duplicate can not be checked if it's Done")
-                                raise Exception(e)    
+                                raise Exception(e)
 
-                        if(flag_all_tickets_behind_is_solved_by_links_are_done):
+                        if(flag_all_tickets_behind_is_solved_by_links_are_done and flag_at_least_one_ticket_behind_is_solved_by_links_are_done):
                             logging.info(f"\t All tickets behind is solved by links have the resolution done")   
                             count_new_solved_cves+=1
-                            #cve["notAffected"] = True
+                            cve["notAffected"] = True
                         else:
                             logging.info(f"\t Not All tickets behind is solved by links have the resolution done, or there was no is solved by link in this ticket")
                             logging.info(f"\tTicket {issue[0]}, can not be set as not affected.")         
