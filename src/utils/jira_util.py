@@ -74,8 +74,8 @@ class JiraUtil:
                     logging.error(f"Info about ticket status does not exist")
 
                 if not hasattr(issue, "fields.resolution"):
-                    logging.error(f"Info about ticket resolution does not exist") 
-                    if not hasattr(issue, "fields.resolution.name"):
+                    logging.error(f"Info about ticket resolution does not exist")  
+                elif not hasattr(issue, "fields.resolution.name"):
                         logging.error(f"Info about ticket resolution name does not exist")     
                 else:
                     logging.info(f"Info about ticket resolution: {issue.fields.resolution.name}")       
