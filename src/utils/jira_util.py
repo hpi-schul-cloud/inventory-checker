@@ -96,13 +96,6 @@ class JiraUtil:
 
                 elif(str(issue[0].fields.resolution) == "Duplicate"):
                     logging.info(f"Ticket {issue[0]} resolution is Duplicate. Checking linked Tickets.")
-
-                    
-                else:
-                    logging.info(f"\t Resolution of Ticket {issue[0]} is not accepted, can not be set as not affected.")
-                    # continue
-
-                
                     if(len(issue[0].fields.issuelinks) == 0):
                         logging.info(f"\tNo linked tickets in ticket {issue[0]}, can not be set as not affected.")
                     else: 
@@ -138,7 +131,12 @@ class JiraUtil:
                             cve["notAffected"] = True
                         else:
                             logging.info(f"\t Not All tickets behind is solved by links have the resolution done, or there was no is solved by link in this ticket")
-                            logging.info(f"\tTicket {issue[0]}, can not be set as not affected.")         
+                            logging.info(f"\tTicket {issue[0]}, can not be set as not affected.")
+                    
+                else:
+                    logging.info(f"\t Resolution of Ticket {issue[0]} is not accepted, can not be set as not affected.")
+                    continue               
+                             
 
             except Exception as e:
                 # Might get thrown if Ticket was deleted or the auth token is not valid
