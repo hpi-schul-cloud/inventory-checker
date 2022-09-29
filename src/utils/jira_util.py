@@ -66,22 +66,21 @@ class JiraUtil:
             countJiraRequest = countJiraRequest +1
 
             try:
-                issueList = jira.search_issues('id = ' + cve["issueId"])
-                issue = issueList[0]
+                issue = jira.search_issues('id = ' + cve["issueId"])
                 logging.info(f"Info about ticket: {issue} => {vars(issue)}")
 
-                if not hasattr(issue, "fields.status.name"):
+                if not hasattr(issue[0], "fields.status.name"):
                     logging.error(f"Info about ticket status does not exist")
 
-                if not hasattr(issue, "fields.resolution"):
+                if not hasattr(issue[0], "fields.resolution"):
                     logging.error(f"Info about ticket resolution does not exist")  
-                elif not hasattr(issue, "fields.resolution.name"):
+                elif not hasattr(issue[0], "fields.resolution.name"):
                         logging.error(f"Info about ticket resolution name does not exist")     
                 else:
-                    logging.info(f"Info about ticket resolution: {issue.fields.resolution.name}")       
+                    logging.info(f"Info about ticket resolution: {issue[0].fields.resolution.name}")       
 
-                logging.info(f"Info about ticket status: {issue.fields.status.name}")
-                logging.info(f"Info about ticket resolution: {issueList.fields.resolution[0]}")
+                logging.info(f"Info about ticket status: {issue[0].fields.status.name}")
+                logging.info(f"Info about ticket resolution: {issue[0].fields.resolution}")
 
                 # issues = jira.search_issues('status = Done AND id = ' + cve["issueId"])
                 # TODO: if resolution Done -> set not anymore effekted on issue
@@ -92,14 +91,13 @@ class JiraUtil:
                 # TODO: if resolution Duplicate -> this
                 
                 
-                if(len(issue.fields.issuelinks) == 0):
-                    logging.info(f"\tNo linking Tickets in Ticket {issue.fields.status.name}")
+                if(len(issue[0].fields.issuelinks) == 0):
+                    logging.info(f"\tNo linking Tickets in Ticket {issue[0].fields.status.name}")
                 else: 
                     logging.info(f"\tInfo about linking issues")
-                    for link in issue.fields.issuelinks:
+                    for link in issue[0].fields.issuelinks:
                         
                         if hasattr(link, "inwardIssue"):
-                            inwardIssue = link.inwardIssue
                             logging.info(f"\tinwardIssue-link: {link}, vars: {vars(link)}")
                             
                             if not hasattr(link, "type.inward"):
