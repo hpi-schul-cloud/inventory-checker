@@ -1,81 +1,82 @@
 from operator import contains
-from os import replace
 
 import requests
+
 from constants import Constants
 
 
-class GrafanaFetcher:
-    def fetch_prometheus_data():
-        request = requests.post(
-            Constants.GRAFANA_HOST + "/api/ds/query",
-            headers={"Authorization": "Bearer " + Constants.GRAFANA_TOKEN},
-            json={
-                "queries": [
-                    {
-                        "refId": "A",
-                        "datasource": {
-                            "type": "prometheus",
-                            "uid": Constants.GRAFANA_PROMETHEUS_UID,
-                        },
-                        "expr": "container_last_seen",
-                    }
-                ],
-                "from": "now-5m",
-                "to": "now",
-            },
-        )
+def fetch_prometheus_data():
+    request = requests.post(
+        Constants.GRAFANA_HOST + "/api/ds/query",
+        headers={"Authorization": "Bearer " + Constants.GRAFANA_TOKEN},
+        json={
+            "queries": [
+                {
+                    "refId": "A",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": Constants.GRAFANA_PROMETHEUS_UID,
+                    },
+                    "expr": "container_last_seen",
+                }
+            ],
+            "from": "now-5m",
+            "to": "now",
+        },
+    )
 
-        return request.json()
+    return request.json()
 
-    def load_inventory(self):
-        response = GrafanaFetcher.fetch_prometheus_data()
 
-        self.images = []
-        images = []
+def load_inventory(invch):
+    response = fetch_prometheus_data()
 
-        for frame in response["results"]["A"]["frames"]:
-            if contains(frame["schema"]["fields"][1]["labels"].keys(), "image"):
-                # namespace = frame["schema"]["fields"][1]["labels"]["namespace"]
-                image = frame["schema"]["fields"][1]["labels"]["image"]
+    invch.images = []
+    images = []
 
-                if not contains(self.images, image):
-                    self.images.append(image)
+    for frame in response["results"]["A"]["frames"]:
+        if contains(frame["schema"]["fields"][1]["labels"].keys(), "image"):
+            # namespace = frame["schema"]["fields"][1]["labels"]["namespace"]
+            image = frame["schema"]["fields"][1]["labels"]["image"]
 
-                   # if not namespace.startswith("kube"):
-                    #    if not contains(image, "kube-"):
-                    images.append(image)
+            if not contains(invch.images, image):
+                invch.images.append(image)
 
-        keywords = []
+                # if not namespace.startswith("kube"):
+                #    if not contains(image, "kube-"):
+                images.append(image)
 
-        for image_full in images:
-            repo = image_full[: image_full.find("/")]
-            image_nr = image_full.removeprefix(repo + "/")
-            image = image_nr.split(":")[0]
-            image_version = image_nr.split(":")[1]
+    keywords = []
 
-            image_splitted = image.split("/")
+    for image_full in images:
+        repo = image_full[: image_full.find("/")]
+        image_nr = image_full.removeprefix(repo + "/")
+        image = image_nr.split(":")[0]
+        image_version = image_nr.split(":")[1]
 
-            keyword = (image_splitted[1] if len(image_splitted) == 2 else image_splitted[0]).replace("@sha256", "")
+        image_splitted = image.split("/")
 
-            if not contains(list(map(lambda e: e["keyword"], keywords)), keyword) and not contains(list(map(lambda e: e.lower(), Constants.KEYWORD_FILTER)), keyword.lower()):
-                keywords.append({
-                    "keyword": keyword,
-                    "version": image_version
-                })
+        keyword = (image_splitted[1] if len(image_splitted) == 2 else image_splitted[0]).replace("@sha256", "")
 
-        for additional_keyword in Constants.ADDITIONAL_KEYWORDS:
-            if not contains(list(map(lambda e: e["keyword"], keywords)), additional_keyword):
-                keywords.append({
-                    "keyword": additional_keyword,
-                    "version": ""
-                })
+        if not contains(list(map(lambda e: e["keyword"], keywords)), keyword) and not contains(
+                list(map(lambda e: e.lower(), Constants.KEYWORD_FILTER)), keyword.lower()):
+            keywords.append({
+                "keyword": keyword,
+                "version": image_version
+            })
 
-        for keyword in keywords:
-            if "-" in keyword["keyword"]:
-                keywords.append({
-                    "keyword": keyword["keyword"].replace("-", " "),
-                    "version": keyword["version"]
-                })
+    for additional_keyword in Constants.ADDITIONAL_KEYWORDS:
+        if not contains(list(map(lambda e: e["keyword"], keywords)), additional_keyword):
+            keywords.append({
+                "keyword": additional_keyword,
+                "version": ""
+            })
 
-        return keywords
+    for keyword in keywords:
+        if "-" in keyword["keyword"]:
+            keywords.append({
+                "keyword": keyword["keyword"].replace("-", " "),
+                "version": keyword["version"]
+            })
+
+    return keywords

@@ -6,59 +6,59 @@ from constants import Constants
 from utils.severity_util import SeverityUtil
 
 
-class CertCVE:
-    def fetch_cves(self):
-        root: dict = requests.get(Constants.CERT_CVE_URL).json()
+def fetch_cves(invch):
+    root: dict = requests.get(Constants.CERT_CVE_URL).json()
 
-        for child in root["content"]:
-            if len(child["cves"]) == 0: continue
+    for child in root["content"]:
+        if len(child["cves"]) == 0: continue
 
-            date: str = child["published"]
-            date_converted: datetime = datetime.fromisoformat(date)
+        date: str = child["published"]
+        date_converted: datetime = datetime.fromisoformat(date)
 
-            if date_converted.timestamp() < self.start_date.timestamp():
-                continue
+        if date_converted.timestamp() < invch.start_date.timestamp():
+            continue
 
-            name: str = child["cves"][len(child["cves"]) - 1]
-            description = child["title"]
+        name: str = child["cves"][len(child["cves"]) - 1]
+        description = child["title"]
 
-            keyword: bool = next(
-                (
-                    key
-                    for key in self.inventory
-                    if key["keyword"].lower() in description.lower()
-                ),
-                False,
-            )
-            if keyword:
-                if contains(self.saved_cves.keys(), name):
-                    if contains(self.saved_cves[name].keys(), "notAffected"):
-                        continue
+        # First matching keyword or False if no keyword matches (generator empty)
+        keyword = next(
+            (
+                key
+                for key in invch.inventory
+                if key["keyword"].lower() in description.lower()
+            ),
+            False
+        )
+        if keyword:
+            if contains(invch.saved_cves.keys(), name):
+                if contains(invch.saved_cves[name].keys(), "notAffected"):
+                    continue
 
-                severity = "unknown"
+            severity = "unknown"
 
-                if child["classification"] != None:
-                    severity = SeverityUtil.getUniformSeverity(child["classification"])
+            if child["classification"] != None:
+                severity = SeverityUtil.getUniformSeverity(child["classification"])
 
-                exit: bool = False
-                for cve in child["cves"]:
-                    # Replace severity of cve's that have an unknown severity
-                    if contains(self.saved_cves.keys(), cve) or contains(
-                        self.new_cves.keys(), cve
-                    ):
-                        if self.new_cves.get(name) != None and self.new_cves.get(name)["severity"] == "unknown":
-                            self.new_cves.get(name)["severity"] = severity
-                        exit = True
-                        break
+            exit: bool = False
+            for cve in child["cves"]:
+                # Replace severity of cve's that have an unknown severity
+                if contains(invch.saved_cves.keys(), cve) or contains(
+                        invch.new_cves.keys(), cve
+                ):
+                    if invch.new_cves.get(name) != None and invch.new_cves.get(name)["severity"] == "unknown":
+                        invch.new_cves.get(name)["severity"] = severity
+                    exit = True
+                    break
 
-                if exit: continue
+            if exit: continue
 
-                self.new_cves[name] = {
-                    "name": name,
-                    "url": f"https://wid.cert-bund.de/portal/wid/securityadvisory?name={child['name']}",
-                    "date": date_converted.strftime("%d.%m.%Y"),
-                    "keyword": keyword["keyword"].lower(),
-                    "description": description,
-                    "severity": severity,
-                    "affected_versions": [],
-                }
+            invch.new_cves[name] = {
+                "name": name,
+                "url": f"https://wid.cert-bund.de/portal/wid/securityadvisory?name={child['name']}",
+                "date": date_converted.strftime("%d.%m.%Y"),
+                "keyword": keyword["keyword"].lower(),
+                "description": description,
+                "severity": severity,
+                "affected_versions": [],
+            }

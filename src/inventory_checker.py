@@ -3,36 +3,35 @@ import logging
 import os
 import sys
 import time
-import traceback
 from datetime import datetime, timedelta, timezone
 from operator import contains
-from types import TracebackType
 
 import schedule
 from dotenv import load_dotenv
 from prometheus_client import REGISTRY, Gauge, Info, Summary
 
 from constants import Constants
-from cve_sources.cert_cve import CertCVE
-from cve_sources.cisa_cve import CisaCVE
-from cve_sources.nvd_cve import NvdCVE
-from cve_sources.vuldb_cve import VuldbCVE
-from notifier import Notifier
-from utils.file_util import FileUtil
-from utils.grafana_fetcher import GrafanaFetcher
+import cve_sources.cert_cve as cert
+import cve_sources.cisa_cve as cisa
+import cve_sources.nvd_cve as nvd
+import notifier
+import utils.file_util as file_util
+import utils.grafana_fetcher as grafana_fetcher
 from utils.jira_util import JiraUtil
-from utils.prometheus_util import PrometheusUtil, Status
-from version_checker import VersionChecker
+import utils.prometheus_util as prometheus_util
+import version_checker
 
 
 class InventoryChecker:
-    REQUEST_TIME = Summary(
-        "request_processing_seconds", "Time spent processing request"
-    )
+    REQUEST_TIME = Summary("request_processing_seconds", "Time spent processing request")
+    STATUS_GRAFANA = Gauge('invch_grafana', 'Success of fetching inventory from grafana in Inventory Checker')
+    STATUS_NVD = Gauge('invch_nvd', 'NVD CVE source available in Inventory Checker')
+    STATUS_CERT = Gauge('invch_cert', 'CERT CVE source available in Inventory Checker')
+    STATUS_CISA = Gauge('invch_cisa', 'CISA CVE source available in Inventory Checker')
+    STATUS_INITIAL_FETCH = Gauge('invch_initial_fetch', 'Initial CVE fetching in Inventory Checker completed')
 
     @REQUEST_TIME.time()
     def run(self):
-        status = Status()
 
         self.offset = (
             time.timezone if (time.localtime().tm_isdst == 0) else time.altzone
@@ -42,26 +41,25 @@ class InventoryChecker:
         self.start_date = self.now - Constants.INTERVAL
         logging.info("---------------------------------------------------------------")
         logging.info("Creating log directory...")
-        FileUtil.create_log_dir(self)
+        file_util.create_log_dir()
         logging.info("---------------------------------------------------------------")
         logging.info("Loading keywords and versions...")
         try:
-            self.inventory = GrafanaFetcher.load_inventory(self)
-            status.set_component_success(Status.Component.grafana, True)
+            self.inventory = grafana_fetcher.load_inventory(self)
+            InventoryChecker.STATUS_GRAFANA.set(1)
         except Exception as e:
             logging.error("Loading inventory from grafana failed, skipping this run.")
             logging.exception(e)
-            status.set_component_success(Status.Component.grafana, False)
-            status.send_status()
+            InventoryChecker.STATUS_GRAFANA.set(0)
             return
 
         logging.info("---------------------------------------------------------------")
         logging.info("Cleaning old CVE's...")
-        FileUtil.clean_old_cves(self)
+        file_util.clean_old_cves(self)
 
         logging.info("---------------------------------------------------------------")
         logging.info("Cleaning old Versions's...")
-        FileUtil.clean_old_versions(self)
+        file_util.clean_old_versions(self)
 
         logging.info("---------------------------------------------------------------")
         logging.info("Clearing prometheus...")
@@ -74,7 +72,7 @@ class InventoryChecker:
 
 
         logging.info("Load old CVEs for no duplications:")
-        self.saved_cves = FileUtil.load_cves(self)
+        self.saved_cves = file_util.load_cves(self)
 
         if (len(self.saved_cves) == 0):
             logging.warning(f"No old CVE's found.")
@@ -88,38 +86,38 @@ class InventoryChecker:
         partial_fetching_failure = False
 
         try:
-            CisaCVE.fetch_cves(self)
-            status.set_component_success(Status.Component.cisa, True)
+            cisa.fetch_cves(self)
+            InventoryChecker.STATUS_CISA.set(1)
         except Exception as e:
             logging.error("Error while fetching Cisa CVE Source: ")
             logging.exception(e)
-            status.set_component_success(Status.Component.cisa, False)
+            InventoryChecker.STATUS_CISA.set(0)
             partial_fetching_failure = True
 
         # No longer used because VuldbCVE is chargeable. The CVE's are also displayed in NVD.
         # try:
-        #     VuldbCVE.fetch_cves(self)
+        #     vuldb.fetch_cves(self)
         # except Exception as e:
         #     logging.error("Error while fetching Vuldb CVE Source: ")
         #     logging.exception(e)
 
         try:
-            CertCVE.fetch_cves(self)
-            status.set_component_success(Status.Component.cert, True)
+            cert.fetch_cves(self)
+            InventoryChecker.STATUS_CERT.set(1)
         except Exception as e:
             logging.error("Error while fetching Cert CVE Source: ")
             logging.exception(e)
-            status.set_component_success(Status.Component.cert, False)
+            InventoryChecker.STATUS_CERT.set(0)
             partial_fetching_failure = True
 
+        # Needs to be last to fetch versions of affected products
         try:
-            # Needs to be last to fetch versions of affected products
-            NvdCVE.fetch_cves(self)
-            status.set_component_success(Status.Component.nvd, True)
+            nvd.fetch_cves(self)
+            InventoryChecker.STATUS_NVD.set(1)
         except Exception as e:
             logging.error("Error while fetching Nvd CVE Source: ")
             logging.exception(e)
-            status.set_component_success(Status.Component.nvd, False)
+            InventoryChecker.STATUS_CERT.set(0)
             partial_fetching_failure = True
 
         new_cve_size = len(self.new_cves)
@@ -127,7 +125,7 @@ class InventoryChecker:
         # Don't post new cve's because it would spam quiet a lot
         # if not hasattr(self, "initial_cve_fetching"):
             # Initial fetch already done
-        status.set_component_success(Status.Component.initial_fetch, True)
+        InventoryChecker.STATUS_INITIAL_FETCH.set(1)
         if new_cve_size == 0:
             logging.info(f"No new CVE's within last {Constants.INTERVAL.days} days")
         else:
@@ -139,32 +137,29 @@ class InventoryChecker:
                 logging.info("")
 
             logging.info("Posting new CVE's...")
-            # TODO: Check status
-            Notifier.post_cve(self.new_cves)
+            notifier.post_cve(self.new_cves)
             JiraUtil.create_jira_issues(self)
         # else:
         #     data = {"text": "Connected new Instance"}
         #     Notifier.post_message(data)
         #     if partial_fetching_failure:
-        #         status.set_component_success(Status.Component.initial_fetch, False)
+        #         InventoryChecker.STATUS_INITIAL_FETCH.set(0)
         #         logging.warning("Couldn't fetch from all CVE sources in first run. Not saving CVEs to avoid "
         #                         f"duplicate entries. Trying again in {Constants.SCHEDULER_INTERVAL} minutes.")
         #     else:
-        #         status.set_component_success(Status.Component.initial_fetch, True)
+        #         InventoryChecker.STATUS_INITIAL_FETCH.set(1)
         #         logging.info("Skipping because it's the first time starting up...")
         #         for cve in self.new_cves.values():
         #             self.new_cves[cve["name"]]["notAffected"] = True
 
         # save new cves
-        FileUtil.save_cves(self)
+        file_util.save_cves(self)
 
         JiraUtil.check_jira_issues(self)
 
-        status.send_status()
-
         self.update_prometheus()
 
-        VersionChecker.check_versions(self)
+        version_checker.check_versions(self)
 
         logging.info("")
         logging.info("=======================")
@@ -292,7 +287,7 @@ if __name__ == "__main__":
 
         if os.getenv("SCHEDULER_INTERVAL"):
             Constants.SCHEDULER_INTERVAL = int(os.getenv("SCHEDULER_INTERVAL"))
-            logging.info("SCHEDULER_INTERVAL loaded = "+ Constants.SCHEDULER_INTERVAL)
+            logging.info("SCHEDULER_INTERVAL loaded = " + str(Constants.SCHEDULER_INTERVAL))
         else:
             logging.info("SCHEDULER_INTERVAL not available")
 
@@ -306,7 +301,7 @@ if __name__ == "__main__":
             Constants.PROMETHEUS_PORT = timedelta(
                 days=int(os.getenv("PROMETHEUS_PORT"))
             )
-            logging.info("PROMETHEUS_PORT loaded = "+ Constants.PROMETHEUS_PORT)
+            logging.info("PROMETHEUS_PORT loaded = " + str(Constants.PROMETHEUS_PORT))
         else:
             logging.info("PROMETHEUS_PORT not available")
 
@@ -364,7 +359,7 @@ if __name__ == "__main__":
         else:
             logging.info("ADDITIONAL_KEYWORDS not available")
 
-        PrometheusUtil.init_prometheus()
+        prometheus_util.init_prometheus()
 
         schedule.every(Constants.SCHEDULER_INTERVAL).minutes.do(lambda: InventoryChecker().run())
         schedule.run_all()

@@ -4,7 +4,7 @@ from operator import contains
 from constants import Constants
 from jira import JIRA
 
-from utils.file_util import FileUtil
+import utils.file_util as file_util
 from utils.severity_util import SeverityUtil
 
 
@@ -149,4 +149,4 @@ class JiraUtil:
         logging.info(f"{count_jira_request} requests for Jira were made (Tickets, that were still affected)")
         logging.info(f"{count_new_solved_cves} are marked as solved in this poll")
 
-        FileUtil.save_cves(self)
+        file_util.save_cves(self)
