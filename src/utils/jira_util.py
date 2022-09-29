@@ -71,7 +71,7 @@ class JiraUtil:
 
                 try:
                     logging.info(f"Ticket status: {issue[0].fields.status.name}")
-                    logging.info(f"Ticket resolution: {issue[0].fields.resolution.name}")
+                    logging.info("Ticket resolution:" + str(issue[0].fields.resolution))
                 except Exception as e :
                     logging.error(f"Ticket resolution name or ticket status does not exist") 
                     raise Exception(e)
