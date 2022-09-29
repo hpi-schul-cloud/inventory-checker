@@ -85,8 +85,8 @@ class JiraUtil:
                             logging.info(f"\t\tCheck if this Ticket is Done or Discarded?")
                             try:
                                 linkedIssue = jira.search_issues('key = ' + inwardIssue.key)
-                                logging.info(f"\t\t\tInfo about linkedIssue: {inwardIssue[0]}")
-                                logging.info(f"\t\t\tInfo about linkedIssue status: {inwardIssue[0].fields.status.name}")
+                                logging.info(f"\t\t\tInfo about linkedIssue: {linkedIssue[0]}")
+                                logging.info(f"\t\t\tInfo about linkedIssue status: {linkedIssue[0].fields.status.name}")
                             except Exception as e:
                                 logging.error("Error while Looking for linked JIRA Tickets: ")
                                 logging.error("Ticket was deleted or the auth token is not valid")
