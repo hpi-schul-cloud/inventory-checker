@@ -1,3 +1,4 @@
+from hashlib import _VarLenHash
 import logging
 from operator import contains
 
@@ -74,7 +75,7 @@ class JiraUtil:
                     logging.info(f"Info about linking issues")
                     link_counter = 1
                     for link in issue[0].fields.issuelinks:
-                        logging.info(f"link {link_counter}, linkname {link.name}")
+                        logging.info(f"link {link_counter}, link: {link}, vars: {vars(link)}")
                         link_counter = link_counter + 1
                         if hasattr(link, "outwardIssue"):
                             outwardIssue = link.outwardIssue
