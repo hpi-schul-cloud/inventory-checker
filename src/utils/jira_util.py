@@ -80,7 +80,7 @@ class JiraUtil:
                 
                 if(str(issue[0].fields.resolution) == "Done"):
                     logging.info(f"Ticket {issue[0]} is Done. Mark as not affected.")
-                    count_new_solved_cves = count_new_solved_cves +1
+                    count_new_solved_cves+=1
                     # TODO:  set not anymore affected on issue
                     #cve["notAffected"] = True
                     continue
@@ -88,7 +88,7 @@ class JiraUtil:
                 
                 elif(str(issue[0].fields.resolution) == "Won't Do"):
                     logging.info(f"Ticket {issue[0]} resolution is Won't Do. Mark as not affected.")
-                    count_new_solved_cves = count_new_solved_cves +1
+                    count_new_solved_cves+=1
                     # TODO:  set not anymore affekted on issue
                     #cve["notAffected"] = True
                     continue
@@ -131,7 +131,7 @@ class JiraUtil:
 
                         if(flag_all_tickets_behind_is_solved_by_links_are_done):
                             logging.info(f"\t All tickets behind is solved by links have the resolution done")   
-                            count_new_solved_cves = count_new_solved_cves +1
+                            count_new_solved_cves+=1
                             #cve["notAffected"] = True
                         else:
                             logging.info(f"\t Not All tickets behind is solved by links have the resolution done, or there was no is solved by link in this ticket")
