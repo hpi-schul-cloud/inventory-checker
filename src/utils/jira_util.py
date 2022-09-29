@@ -13,7 +13,9 @@ class JiraUtil:
         if not Constants.JIRA_HOST or not Constants.JIRA_TOKEN or not Constants.JIRA_USER or not Constants.JIRA_PROJECT_ID:
             return
 
-        jira = JIRA(server=Constants.JIRA_HOST, basic_auth=(Constants.JIRA_USER, Constants.JIRA_TOKEN))
+        jira = JiraUtil.connect_jira(Constants.JIRA_HOST, Constants.JIRA_USER, Constants.JIRA_TOKEN)
+        if(jira == None):
+            return        
 
         for cve in self.new_cves.values():
             title = cve["name"] + " - " + cve["keyword"]
@@ -21,20 +23,38 @@ class JiraUtil:
 
             description = cve["description"] + "\n" + cve["url"] + "\n\nAffected versions: " + versions
 
-            issue = jira.create_issue(project=Constants.JIRA_PROJECT_ID, summary=title, description=description, issuetype={"name": Constants.JIRA_ISSUE_TYPE}, priority={"name": SeverityUtil.transformSeverityToJiraPriority(cve["severity"])})
-            self.new_cves[cve["name"]]["issueId"] = issue.id
+            try:
+                issue = jira.create_issue(project=Constants.JIRA_PROJECT_ID, summary=title, description=description, issuetype={"name": Constants.JIRA_ISSUE_TYPE}, priority={"name": SeverityUtil.transformSeverityToJiraPriority(cve["severity"])})
+                self.new_cves[cve["name"]]["issueId"] = issue.id
+                logging.info(f"Created issue: {issue} with Ticket: {cve}")
+            except Exception as e:
+                logging.error("Error while creating JIRA Tickets: ")
+                logging.info(f"Ticket: {cve}")
+                logging.exception(e)
+                continue
+           
+
+    def connect_jira(jira_server, jira_user, jira_password):
+    # Connect to JIRA. Return None on error
+        try:
+            logging.info("Connecting to JIRA: %s" % jira_server)
+            jira_options = {'server': jira_server}
+            jira = JIRA(options=jira_options, basic_auth=(jira_user, jira_password))
+                                            # ^--- Note the tuple
+            logging.info("succsessful" )                                
+            return jira
+        except Exception as e:
+            logging.error("Failed to connect to JIRA: %s" % e)
+            return None
 
     def check_jira_issues(self):
         if not Constants.JIRA_HOST or not Constants.JIRA_TOKEN or not Constants.JIRA_USER or not Constants.JIRA_PROJECT_ID:
+            logging.info("No Rocketchat message will be sent. ROCKETCHAT_WEBHOOK env. var. is not loaded.")
             return
-
-        logging.info("")
-        logging.info("~~~~~~~~~~~~~~~~~~~~~~~")
-        logging.info("")
 
         logging.info("Looking for solved JIRA Tickets...")
 
-        jira = JIRA(server=Constants.JIRA_HOST, basic_auth=(Constants.JIRA_USER, Constants.JIRA_TOKEN))
+        jira = JiraUtil.connect_jira(Constants.JIRA_HOST, Constants.JIRA_USER, Constants.JIRA_TOKEN)
 
         for cve in self.saved_cves.values():
             if contains(cve.keys(), "notAffected"):
@@ -44,12 +64,49 @@ class JiraUtil:
                 continue
 
             try:
-                issues = jira.search_issues('status = Done AND id = ' + cve["issueId"])
+                # issues = jira.search_issues('status = Done AND id = ' + cve["issueId"])
+                issue = jira.search_issues('id = ' + cve["issueId"])
+                logging.info(f"Info about ticket: {issue[0]}")
+                logging.info(f"Info about ticket status: {issue[0].fields.status.name}")
+                logging.info(f"Info about linking issues")
+                for link in issue[0].fields.issuelinks:
+                    logging.info(f"link")
+                    if hasattr(link, "outwardIssue"):
+                        outwardIssue = link.outwardIssue
+                        logging.info("\tOutward: " + outwardIssue.key)
+                    if hasattr(link, "inwardIssue"):
+                        inwardIssue = link.inwardIssue
+                        logging.info("\tInward: " + inwardIssue.key)
+                        # InwardIssue.key is the Ticketnumber e.g. OPS-1883
+                        # Check if this Ticket is Done or Discarded.
+                        logging.info(f"Check if this Ticket is Done or Discarded?")
+                        try:
+                            linkedIssue = jira.search_issues('key = ' + inwardIssue)
+                            logging.info(f"Info about linkedIssue: {issue[0]}")
+                            logging.info(f"Info about linkedIssue status: {issue[0].fields.status.name}")
+                        except Exception as e:
+                            logging.error("Error while Looking for linked JIRA Tickets: ")
+                            logging.error("Ticket was deleted or the auth token is not valid")
+                            logging.exception(e)
+                            continue
+
+
+
+                #logging.info(f"Info About ticket.fields.status: {issue[0].fields.status}")
                 
-                if len(issues) == 1:
-                    self.saved_cves[cve["name"]]["notAffected"] = True
-            except:
+                #logging.info(f"Info About ticket.fields.comment.comments: {issue[0].fields.comment.comments}")
+                #logging.info(f"Info About ticket.fields.summary: {issue[0].fields.summary}")
+                #logging.info(f"Info About ticket.fields.project.key: {issue[0].fields.project.key}")
+                #logging.info(f"Info About ticket.fields.reporter.displayName: {issue[0].fields.reporter.displayName}")
+
+                
+            except Exception as e:
                 # Might get thrown if Ticket was deleted or the auth token is not valid
+                logging.error("Error while Looking for solved JIRA Tickets: ")
+                logging.error("Ticket was deleted or the auth token is not valid")
+                logging.exception(e)
                 continue
+
+        logging.info("Checked all CVE's") 
 
         FileUtil.save_cves(self)

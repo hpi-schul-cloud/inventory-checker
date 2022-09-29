@@ -1,11 +1,16 @@
 import requests
 
 from constants import Constants
+import logging
 
 
 class Notifier:
-    def post_cve(new_cves):
-        if len(new_cves) == 0 or not Constants.ROCKETCHAT_WEBHOOK:
+    def post_cve( new_cves):
+        if not Constants.ROCKETCHAT_WEBHOOK:
+            logging.info("No Rocketchat message will be sent. ROCKETCHAT_WEBHOOK is not loaded.")
+            return
+        elif(len(new_cves) == 0):
+            logging.info("No Rocketchat message will be sent. No new CVE's are found.")
             return
 
         msg = f"Found {len(new_cves)} new CVE's within last {Constants.INTERVAL.days} days:"
@@ -37,11 +42,12 @@ class Notifier:
             )
 
         data = {"text": msg, "attachments": attachments}
-
-        requests.post(Constants.ROCKETCHAT_WEBHOOK, json=data)
+        Notifier.post_message(data)
 
     def post_message(data):
         if not Constants.ROCKETCHAT_WEBHOOK:
+            logging.info("No Rocketchat message will be sent. ROCKETCHAT_WEBHOOK is not loaded.")
             return
 
         requests.post(Constants.ROCKETCHAT_WEBHOOK, json=data)
+        logging.info("Sending to Rocketchat: " + str(data))
