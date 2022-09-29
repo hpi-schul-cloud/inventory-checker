@@ -103,17 +103,17 @@ class JiraUtil:
                             if not hasattr(link, "type.inward"):
                                 logging.error(f"link name does not exist")
                                 #TODO: Fehlerabfangen
-                                continue
+                                #continue
 
                             if not hasattr(link, "inwardIssue.key"):
                                 logging.error(f"linked Ticket name does not exist")
                                 #TODO: Fehlerabfangen
-                                continue
+                                #continue
 
                             if not hasattr(link, "inwardIssue.fields.status.name"):
                                 logging.error(f"linked Ticket status does not exist")
                                 #TODO: Fehlerabfangen
-                                continue
+                                #continue
                             logging.info(f"\t\tCheck if this Ticket is Done or Discarded?")
                             logging.info(f"\t\t\tInfo about link name/type: {link.type.inward}")
                             logging.info(f"\t\t\tInfo about linked Ticket: {link.inwardIssue.key}")
