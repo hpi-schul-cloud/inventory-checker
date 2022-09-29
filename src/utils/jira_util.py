@@ -69,18 +69,12 @@ class JiraUtil:
                 issue = jira.search_issues('id = ' + cve["issueId"])
                 logging.info(f"Info about ticket: {issue} => {vars(issue)}")
 
-                if not hasattr(issue[0], "fields.status.name"):
-                    logging.error(f"Info about ticket status does not exist")
-
-                if not hasattr(issue[0], "fields.resolution"):
-                    logging.error(f"Info about ticket resolution does not exist")  
-                elif not hasattr(issue[0], "fields.resolution.name"):
-                        logging.error(f"Info about ticket resolution name does not exist")     
-                else:
-                    logging.info(f"Info about ticket resolution: {issue[0].fields.resolution.name}")       
-
-                logging.info(f"Info about ticket status: {issue[0].fields.status.name}")
-                logging.info(f"Info about ticket resolution: {issue[0].fields.resolution}")
+                try:
+                    logging.info(f"Info about ticket status: {issue[0].fields.status.name}")
+                    logging.info(f"Info about ticket resolution: {issue[0].fields.resolution}")
+                except KeyError as e :
+                    logging.error(f"Info about ticket resolution name or ticket status does not exist") 
+                    raise KeyError(e)
 
                 # issues = jira.search_issues('status = Done AND id = ' + cve["issueId"])
                 # TODO: if resolution Done -> set not anymore effekted on issue
@@ -97,30 +91,19 @@ class JiraUtil:
                     logging.info(f"\tInfo about linking issues")
                     for link in issue[0].fields.issuelinks:
                         
-                        if hasattr(link, "inwardIssue"):
-                            logging.info(f"\tinwardIssue-link: {link}, vars: {vars(link)}")
-                            
-                            if not hasattr(link, "type.inward"):
-                                logging.error(f"link name does not exist")
-                                #TODO: Fehlerabfangen
-                                #continue
 
-                            if not hasattr(link, "inwardIssue.key"):
-                                logging.error(f"linked Ticket name does not exist")
-                                #TODO: Fehlerabfangen
-                                #continue
-
-                            if not hasattr(link, "inwardIssue.fields.status.name"):
-                                logging.error(f"linked Ticket status does not exist")
-                                #TODO: Fehlerabfangen
-                                #continue
+                        try:
                             logging.info(f"\t\tCheck if this Ticket is Done or Discarded?")
                             logging.info(f"\t\t\tInfo about link name/type: {link.type.inward}")
                             logging.info(f"\t\t\tInfo about linked Ticket: {link.inwardIssue.key}")
                             logging.info(f"\t\t\t\tInfo about linked Ticket status: {link.inwardIssue.fields.status.name}")
+                        except KeyError as e :
+                            logging.error(f"link name, linked Ticket name or linked Ticket status does not exist")
+                            logging.error(f"Ticket/CVE with resolution Duplicate cant be checked if it's Done")
+                            raise KeyError(e)                        
 
-                            # TODO:  if  Inward link name = is solved by  &&  linked.tiket.status name == done
-                            # TODO:  set not anymore effekted on issue
+                        # TODO:  if  Inward link name = is solved by  &&  linked.tiket.status name == done
+                        # TODO:  set not anymore effekted on issue
                 
             except Exception as e:
                 # Might get thrown if Ticket was deleted or the auth token is not valid
