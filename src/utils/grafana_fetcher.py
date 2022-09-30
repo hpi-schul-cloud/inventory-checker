@@ -1,7 +1,10 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from inventory_checker import InventoryChecker
+
 from operator import contains
-
 import requests
-
 from constants import Constants
 
 
@@ -28,7 +31,7 @@ def fetch_prometheus_data():
     return request.json()
 
 
-def load_inventory(invch):
+def load_inventory(invch: InventoryChecker):
     response = fetch_prometheus_data()
 
     invch.images = []

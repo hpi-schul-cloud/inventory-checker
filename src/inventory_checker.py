@@ -17,7 +17,7 @@ import cve_sources.nvd_cve as nvd
 import notifier
 import utils.file_util as file_util
 import utils.grafana_fetcher as grafana_fetcher
-from utils.jira_util import JiraUtil
+import utils.jira_util as jira_util
 import utils.prometheus_util as prometheus_util
 import version_checker
 
@@ -138,7 +138,7 @@ class InventoryChecker:
 
             logging.info("Posting new CVE's...")
             notifier.post_cve(self.new_cves)
-            JiraUtil.create_jira_issues(self)
+            jira_util.create_jira_issues(self)
         # else:
         #     data = {"text": "Connected new Instance"}
         #     Notifier.post_message(data)
@@ -155,11 +155,14 @@ class InventoryChecker:
         # save new cves
         file_util.save_cves(self)
 
-        JiraUtil.check_jira_issues(self)
+        jira_util.check_jira_issues(self)
 
         self.update_prometheus()
-
-        version_checker.check_versions(self)
+        try:
+            version_checker.check_versions(self)
+        except Exception as e:
+            logging.error("Checking versions failed with unexpected exception:")
+            logging.exception(e)
 
         logging.info("")
         logging.info("=======================")

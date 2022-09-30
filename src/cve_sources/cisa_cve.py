@@ -10,7 +10,7 @@ def fetch_cves(invch):
 
     for child in root["vulnerabilities"]:
         date: str = child["dateAdded"]
-        date_converted:datetime = datetime.strptime(date, "%Y-%m-%d")
+        date_converted: datetime = datetime.strptime(date, "%Y-%m-%d")
 
         if date_converted.timestamp() < invch.start_date.timestamp():
             continue

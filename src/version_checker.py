@@ -1,15 +1,19 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from inventory_checker import InventoryChecker
+
 import logging
 from operator import contains
-
 import requests
 from dxf import DXF, exceptions
-
 from constants import Constants
 import notifier
 import utils.file_util
 
 
-def check_versions(invch):
+def check_versions(invch: InventoryChecker):
     logging.info("")
     logging.info("~~~~~~~~~~~~~~~~~~~~~~~")
     logging.info("")
@@ -20,6 +24,7 @@ def check_versions(invch):
     messages = []
 
     for image_full in invch.images:
+        logging.info(f"Checking: {image_full}")
         host = image_full[: image_full.find("/")]
         image_nr = image_full.removeprefix(host + "/")
         image = image_nr.split("@")[0] if contains(image_nr, "@") else image_nr.split(":")[0]
@@ -37,16 +42,15 @@ def check_versions(invch):
             currentHash = tag.split(":")[1]
         else:
             try:
-                try:
-                    currentHash = registry._get_dcd(tag)
-                except exceptions.DXFUnauthorizedError:
-                    message = 'Credentials for repo "' + host + '" are missing or are wrong!'
-                    if contains_message(invch.saved_versions, message) or contains(messages, message):
-                        continue
-
-                    messages.append(message)
-                    logging.warning(message)
+                currentHash = registry._get_dcd(tag)
+            except exceptions.DXFUnauthorizedError:
+                message = 'Credentials for repo "' + host + '" are missing or are wrong!'
+                if contains_message(invch.saved_versions, message) or contains(messages, message):
                     continue
+
+                messages.append(message)
+                logging.warning(message)
+                continue
             except requests.exceptions.HTTPError:
                 message = "Current tag not found for: " + image_full
                 if contains_message(invch.saved_versions, message) or contains(messages, message):
@@ -58,16 +62,15 @@ def check_versions(invch):
 
         try:
             try:
-                try:
-                    latestHash = registry._get_dcd("latest")
-                except exceptions.DXFUnauthorizedError:
-                    message = 'Credentials for repo "' + host + '" are missing or are wrong!'
-                    if contains_message(invch.saved_versions, message) or contains(messages, message):
-                        continue
-
-                    messages.append(message)
-                    logging.warning(message)
+                latestHash = registry._get_dcd("latest")
+            except exceptions.DXFUnauthorizedError:
+                message = 'Credentials for repo "' + host + '" are missing or are wrong!'
+                if contains_message(invch.saved_versions, message) or contains(messages, message):
                     continue
+
+                messages.append(message)
+                logging.warning(message)
+                continue
             except requests.exceptions.HTTPError:
                 latestHash = registry._get_dcd("main")
         except requests.exceptions.HTTPError:
