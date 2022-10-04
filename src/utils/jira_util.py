@@ -56,12 +56,17 @@ def check_jira_issues(invch: InventoryChecker):
         logging.info("No Rocketchat message will be sent. ROCKETCHAT_WEBHOOK env. var. is not loaded.")
         return
 
+    if(jira == None):
+        return
+
     logging.info("Looking for solved JIRA Tickets...")
 
     jira = connect_jira(Constants.JIRA_HOST, Constants.JIRA_USER, Constants.JIRA_TOKEN)
 
+    # Counters only for logging
     count_jira_request = 0
     count_new_solved_cves = 0
+
     for cve in invch.saved_cves.values():
         if contains(cve.keys(), "notAffected"):
             continue
@@ -85,7 +90,6 @@ def check_jira_issues(invch: InventoryChecker):
             if(str(issue[0].fields.resolution) == "Done"):
                 logging.info(f"Ticket {issue[0]} is Done. Mark as not affected.")
                 count_new_solved_cves+=1
-                # TODO:  set not anymore affected on issue
                 cve["notAffected"] = True
                 continue
 
@@ -93,7 +97,6 @@ def check_jira_issues(invch: InventoryChecker):
             elif(str(issue[0].fields.resolution) == "Won't Do"):
                 logging.info(f"Ticket {issue[0]} resolution is Won't Do. Mark as not affected.")
                 count_new_solved_cves+=1
-                # TODO:  set not anymore affekted on issue
                 cve["notAffected"] = True
                 continue
 
@@ -129,6 +132,7 @@ def check_jira_issues(invch: InventoryChecker):
                             logging.error(f"Ticket/CVE with resolution Duplicate can not be checked if it's Done")
                             raise Exception(e)
 
+                    # At least one 'is solved by' exists AND all 'is solved by' linked Tickets are Done.
                     if(flag_all_tickets_behind_is_solved_by_links_are_done and flag_at_least_one_ticket_behind_is_solved_by_links_are_done):
                         logging.info(f"\t All tickets behind is solved by links have the resolution done")
                         count_new_solved_cves+=1
