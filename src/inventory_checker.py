@@ -11,9 +11,9 @@ from dotenv import load_dotenv
 from prometheus_client import REGISTRY, Gauge, Info, Summary
 
 from constants import Constants
-import cve_sources.cert_cve as cert
-import cve_sources.cisa_cve as cisa
-import cve_sources.nvd_cve as nvd
+from cve_sources.cert_cve import CertCVEs
+from cve_sources.cisa_cve import CisaCVEs
+from cve_sources.nvd_cve import NvdCVEs
 import notifier
 import utils.file_util as file_util
 import utils.grafana_fetcher as grafana_fetcher
@@ -90,40 +90,12 @@ class InventoryChecker:
 
         partial_fetching_failure = False
 
-        try:
-            cisa.fetch_cves(self)
-            InventoryChecker.STATUS_CISA.set(1)
-        except Exception as e:
-            logging.error("Error while fetching Cisa CVE Source: ")
-            logging.exception(e)
-            InventoryChecker.STATUS_CISA.set(0)
-            partial_fetching_failure = True
+        # VuldbCVE no longer used because it is chargeable. The CVE's are also displayed in NVD.
+        sources = [CisaCVEs, CertCVEs, NvdCVEs]
 
-        # No longer used because VuldbCVE is chargeable. The CVE's are also displayed in NVD.
-        # try:
-        #     vuldb.fetch_cves(self)
-        # except Exception as e:
-        #     logging.error("Error while fetching Vuldb CVE Source: ")
-        #     logging.exception(e)
-
-        try:
-            cert.fetch_cves(self)
-            InventoryChecker.STATUS_CERT.set(1)
-        except Exception as e:
-            logging.error("Error while fetching Cert CVE Source: ")
-            logging.exception(e)
-            InventoryChecker.STATUS_CERT.set(0)
-            partial_fetching_failure = True
-
-        # Needs to be last to fetch versions of affected products
-        try:
-            nvd.fetch_cves(self)
-            InventoryChecker.STATUS_NVD.set(1)
-        except Exception as e:
-            logging.error("Error while fetching Nvd CVE Source: ")
-            logging.exception(e)
-            InventoryChecker.STATUS_CERT.set(0)
-            partial_fetching_failure = True
+        for source in sources:
+            if not source.try_fetching_cves(self):
+                partial_fetching_failure = True
 
         new_cve_size = len(self.new_cves)
 
