@@ -8,19 +8,27 @@ from operator import contains
 
 from constants import Constants
 from jira import JIRA
+from prometheus_client import Gauge
 
 import utils.file_util as file_util
 from utils.severity_util import SeverityUtil
 
+STATUS_REPORT = Gauge('invch_jira', 'Success of Posting and Receiving from Inventory Checker to Jira')
+
 
 def create_jira_issues(invch: InventoryChecker):
+    errors_occurs_during_creating_tickets_flag = False
     if not Constants.JIRA_HOST or not Constants.JIRA_TOKEN or not Constants.JIRA_USER or not Constants.JIRA_PROJECT_ID:
         logging.info("No Jira Tickets can be checked. Jira env. var. is not loaded.")
+        errors_occurs_during_creating_tickets_flag = True
         return
 
     jira = connect_jira(Constants.JIRA_HOST, Constants.JIRA_USER, Constants.JIRA_TOKEN)
     if(jira == None):
+        errors_occurs_during_creating_tickets_flag = True
         return
+    
+    
 
     for cve in invch.new_cves.values():
         title = cve["name"] + " - " + cve["keyword"]
@@ -36,7 +44,13 @@ def create_jira_issues(invch: InventoryChecker):
             logging.error("Error while creating JIRA Tickets: ")
             logging.info(f"Ticket: {cve}")
             logging.exception(e)
+            errors_occurs_during_creating_tickets_flag = True
             continue
+    if errors_occurs_during_creating_tickets_flag:
+        STATUS_REPORT.set(0)
+    else:
+        STATUS_REPORT.set(1)
+    
 
 
 def connect_jira(jira_server, jira_user, jira_password):
@@ -53,19 +67,22 @@ def connect_jira(jira_server, jira_user, jira_password):
         return None
 
 def check_jira_issues(invch: InventoryChecker):
+    errors_occurs_during_searching_tickets_flag = False
     if not Constants.JIRA_HOST or not Constants.JIRA_TOKEN or not Constants.JIRA_USER or not Constants.JIRA_PROJECT_ID:
         logging.info("No Jira Tickets can be checked. Jira env. var. is not loaded.")
+        errors_occurs_during_searching_tickets_flag = True
         return
 
     
     
     jira = connect_jira(Constants.JIRA_HOST, Constants.JIRA_USER, Constants.JIRA_TOKEN)
     if(jira == None):
+        errors_occurs_during_searching_tickets_flag = True
         return
 
     logging.info("Looking for solved JIRA Tickets...")
 
-    # Counters only for logging
+    # Counters are only for logging
     count_jira_request = 0
     count_new_solved_cves = 0
 
@@ -86,6 +103,7 @@ def check_jira_issues(invch: InventoryChecker):
                 logging.info("Ticket resolution: " + str(issue[0].fields.resolution))
             except Exception as e :
                 logging.error(f"Ticket resolution name or ticket status does not exist")
+                errors_occurs_during_searching_tickets_flag = True
                 raise Exception(e)
 
 
@@ -124,6 +142,7 @@ def check_jira_issues(invch: InventoryChecker):
                             logging.info(f"\t\t\tLinked ticket: {link.inwardIssue.key}")
                             logging.info(f"\t\t\t\tLinked ticket status: {link.inwardIssue.fields.status.name}")
 
+                            # Status in linked ticket done (not resolution, so a discard and won't do will work too)
                             if(not (link.type.inward == "is solved by" and link.inwardIssue.fields.status.name == "Done")):
                                 flag_all_tickets_behind_is_solved_by_links_are_done = False
                             else:
@@ -132,6 +151,7 @@ def check_jira_issues(invch: InventoryChecker):
                         except Exception as e :
                             logging.error(f"link name, linked ticket name or linked Ticket status does not exist")
                             logging.error(f"Ticket/CVE with resolution Duplicate can not be checked if it's Done")
+                            errors_occurs_during_searching_tickets_flag = True
                             raise Exception(e)
 
                     # At least one 'is solved by' exists AND all 'is solved by' linked Tickets are Done.
@@ -139,6 +159,7 @@ def check_jira_issues(invch: InventoryChecker):
                         logging.info(f"\t All tickets behind is solved by links have the resolution done")
                         count_new_solved_cves+=1
                         cve["notAffected"] = True
+                        logging.info(f"\tTicket {issue[0]}, is set as not affected.")
                     else:
                         logging.info(f"\t Not All tickets behind is solved by links have the resolution done, or there was no is solved by link in this ticket")
                         logging.info(f"\tTicket {issue[0]}, can not be set as not affected.")
@@ -153,7 +174,13 @@ def check_jira_issues(invch: InventoryChecker):
             logging.error("Error while looking for solved JIRA tickets: ")
             logging.error("Ticket was deleted, the auth token is not valid or there are missing attributes in the ticket")
             logging.exception(e)
+            errors_occurs_during_searching_tickets_flag = True
             continue
+    
+    if errors_occurs_during_searching_tickets_flag:
+        STATUS_REPORT.set(0)
+    else:
+        STATUS_REPORT.set(1)
 
     logging.info("Checked all CVE's")
     logging.info(f"{count_jira_request} requests for Jira were made (Tickets, that were still affected)")
