@@ -15,6 +15,7 @@ from utils.severity_util import SeverityUtil
 
 def create_jira_issues(invch: InventoryChecker):
     if not Constants.JIRA_HOST or not Constants.JIRA_TOKEN or not Constants.JIRA_USER or not Constants.JIRA_PROJECT_ID:
+        logging.info("No Jira Tickets can be checked. Jira env. var. is not loaded.")
         return
 
     jira = connect_jira(Constants.JIRA_HOST, Constants.JIRA_USER, Constants.JIRA_TOKEN)
@@ -53,15 +54,16 @@ def connect_jira(jira_server, jira_user, jira_password):
 
 def check_jira_issues(invch: InventoryChecker):
     if not Constants.JIRA_HOST or not Constants.JIRA_TOKEN or not Constants.JIRA_USER or not Constants.JIRA_PROJECT_ID:
-        logging.info("No Rocketchat message will be sent. ROCKETCHAT_WEBHOOK env. var. is not loaded.")
+        logging.info("No Jira Tickets can be checked. Jira env. var. is not loaded.")
         return
 
+    
+    
+    jira = connect_jira(Constants.JIRA_HOST, Constants.JIRA_USER, Constants.JIRA_TOKEN)
     if(jira == None):
         return
 
     logging.info("Looking for solved JIRA Tickets...")
-
-    jira = connect_jira(Constants.JIRA_HOST, Constants.JIRA_USER, Constants.JIRA_TOKEN)
 
     # Counters only for logging
     count_jira_request = 0
