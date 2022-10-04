@@ -41,6 +41,7 @@ class InventoryChecker:
         self.start_date = self.now - Constants.INTERVAL
         logging.info("---------------------------------------------------------------")
         logging.info("Creating log directory...")
+        # TODO: Catch Exception
         file_util.create_log_dir()
         logging.info("---------------------------------------------------------------")
         logging.info("Loading keywords and versions...")
@@ -55,14 +56,17 @@ class InventoryChecker:
 
         logging.info("---------------------------------------------------------------")
         logging.info("Cleaning old CVE's...")
+        # TODO: Catch Exception
         file_util.clean_old_cves(self)
 
         logging.info("---------------------------------------------------------------")
         logging.info("Cleaning old Versions's...")
+        # TODO: Catch Exception
         file_util.clean_old_versions(self)
 
         logging.info("---------------------------------------------------------------")
         logging.info("Clearing prometheus...")
+        # TODO: Catch Exception ???
         self.clear_prometheus()
 
         logging.info("---------------------------------------------------------------")
@@ -72,6 +76,7 @@ class InventoryChecker:
 
 
         logging.info("Load old CVEs for no duplications:")
+        # TODO: Catch Exception
         self.saved_cves = file_util.load_cves(self)
 
         if (len(self.saved_cves) == 0):
@@ -153,6 +158,8 @@ class InventoryChecker:
         #             self.new_cves[cve["name"]]["notAffected"] = True
 
         # save new cves
+        
+        # TODO: Catch Exception
         file_util.save_cves(self)
 
         jira_util.check_jira_issues(self)
