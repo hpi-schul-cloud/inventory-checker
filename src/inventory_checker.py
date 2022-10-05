@@ -102,7 +102,7 @@ class InventoryChecker:
         InventoryChecker.STATUS_INITIAL_FETCH.set(1)
         if new_cve_size == 0:
             logging.info(f"No new CVE's within last {Constants.INTERVAL.days} days")
-            number_of_failed_ticket_creations = sum(contains(saved_cve['error_creating_jira_ticket']) for saved_cve in self.saved_cves.values())
+            number_of_failed_ticket_creations = sum(contains(saved_cve.keys(), "error_creating_jira_ticket") for saved_cve in self.saved_cves.values())
             if not number_of_failed_ticket_creations == 0:
                 logging.info("Creating failed Jira Tickets")
                 jira_util.create_jira_issues(self)
