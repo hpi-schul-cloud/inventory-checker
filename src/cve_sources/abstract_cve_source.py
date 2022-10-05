@@ -3,7 +3,6 @@ import logging
 
 from requests import HTTPError
 
-from inventory_checker import InventoryChecker
 
 
 class CVESource(metaclass=abc.ABCMeta):
@@ -22,7 +21,7 @@ class CVESource(metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def fetch_cves(invch: InventoryChecker):
+    def fetch_cves(invch):
         pass
 
     @classmethod
