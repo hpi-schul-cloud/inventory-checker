@@ -20,12 +20,12 @@ def create_jira_issues(invch: InventoryChecker):
     errors_occurs_during_creating_tickets_flag = False
     if not Constants.JIRA_HOST or not Constants.JIRA_TOKEN or not Constants.JIRA_USER or not Constants.JIRA_PROJECT_ID:
         logging.info("No Jira Tickets can be checked. Jira env. var. is not loaded.")
-        errors_occurs_during_creating_tickets_flag = True
+        STATUS_REPORT.set(0)
         return
 
     jira = connect_jira(Constants.JIRA_HOST, Constants.JIRA_USER, Constants.JIRA_TOKEN)
     if(jira == None):
-        errors_occurs_during_creating_tickets_flag = True
+        STATUS_REPORT.set(0)
         return
     
     number_of_failed_ticket_creations = sum(contains(saved_cve.keys(), "error_creating_jira_ticket") for saved_cve in invch.saved_cves.values())
@@ -106,14 +106,14 @@ def check_jira_issues(invch: InventoryChecker):
     errors_occurs_during_searching_tickets_flag = False
     if not Constants.JIRA_HOST or not Constants.JIRA_TOKEN or not Constants.JIRA_USER or not Constants.JIRA_PROJECT_ID:
         logging.info("No Jira Tickets can be checked. Jira env. var. is not loaded.")
-        errors_occurs_during_searching_tickets_flag = True
+        STATUS_REPORT.set(0)
         return
 
     
     
     jira = connect_jira(Constants.JIRA_HOST, Constants.JIRA_USER, Constants.JIRA_TOKEN)
     if(jira == None):
-        errors_occurs_during_searching_tickets_flag = True
+        STATUS_REPORT.set(0)
         return
 
     logging.info("Looking for solved JIRA Tickets...")
