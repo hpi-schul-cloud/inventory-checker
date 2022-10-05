@@ -28,6 +28,43 @@ def create_jira_issues(invch: InventoryChecker):
         errors_occurs_during_creating_tickets_flag = True
         return
     
+
+    # TODO: welche liste soll iteriert werden?
+    number_of_failed_ticket_creations = sum(contains(saved_cve['error_creating_jira_ticket']) for saved_cve in invch.saved_cves.values())
+    logging.info(f"{number_of_failed_ticket_creations} tickets were not able to create a Jira Ticket in last Iteration") 
+
+    if number_of_failed_ticket_creations == 0:
+        STATUS_REPORT.set(1)
+    else:
+        logging.info(f"Creating tickets where a creation of the Jira tickets failed in last iteration") 
+        for cve in invch.saved_cves.values():
+            if contains(cve.keys(), "error_creating_jira_ticket"):
+                logging.info(f"CVE: {cve} was not able to create a Ticket in the last iteration. Try again...") 
+            else:
+                continue
+
+            title = cve["name"] + " - " + cve["keyword"]
+            versions = "???" if len(cve["affected_versions"]) == 0 else ", ".join(cve["affected_versions"])
+
+            description = cve["description"] + "\n" + cve["url"] + "\n\nAffected versions: " + versions
+
+            try:
+                issue = jira.create_issue(project=Constants.JIRA_PROJECT_ID, summary=title, description=description, issuetype={"name": Constants.JIRA_ISSUE_TYPE}, priority={"name": SeverityUtil.transformSeverityToJiraPriority(cve["severity"])})
+                invch.new_cves[cve["name"]]["issueId"] = issue.id
+                logging.info(f"Created issue: {issue} with Ticket: {cve}")
+                logging.info(f"Remove error mark in CVE: {cve}")
+                # delete the key, value pair with the key error_creating_jira_ticket
+                del cve["error_creating_jira_ticket"]
+            except Exception as e:
+                logging.error("Error while creating JIRA Tickets: ")
+                logging.info(f"Ticket: {cve}")
+                logging.exception(e)
+                errors_occurs_during_creating_tickets_flag = True
+                continue
+        if errors_occurs_during_creating_tickets_flag:
+            STATUS_REPORT.set(0)
+        else:
+            STATUS_REPORT.set(1)
     
 
     for cve in invch.new_cves.values():
@@ -43,13 +80,14 @@ def create_jira_issues(invch: InventoryChecker):
         except Exception as e:
             logging.error("Error while creating JIRA Tickets: ")
             logging.info(f"Ticket: {cve}")
+            cve["error_creating_jira_ticket"] = True
             logging.exception(e)
             errors_occurs_during_creating_tickets_flag = True
             continue
     if errors_occurs_during_creating_tickets_flag:
         STATUS_REPORT.set(0)
-    else:
-        STATUS_REPORT.set(1)
+    
+
     
 
 
