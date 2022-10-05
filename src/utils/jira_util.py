@@ -28,8 +28,6 @@ def create_jira_issues(invch: InventoryChecker):
         errors_occurs_during_creating_tickets_flag = True
         return
     
-
-    # TODO: welche liste soll iteriert werden?
     number_of_failed_ticket_creations = sum(contains(saved_cve['error_creating_jira_ticket']) for saved_cve in invch.saved_cves.values())
     logging.info(f"{number_of_failed_ticket_creations} tickets were not able to create a Jira Ticket in last Iteration") 
 
