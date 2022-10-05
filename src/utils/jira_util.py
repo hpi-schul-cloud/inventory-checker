@@ -48,7 +48,7 @@ def create_jira_issues(invch: InventoryChecker):
 
             try:
                 issue = jira.create_issue(project=Constants.JIRA_PROJECT_ID, summary=title, description=description, issuetype={"name": Constants.JIRA_ISSUE_TYPE}, priority={"name": SeverityUtil.transformSeverityToJiraPriority(cve["severity"])})
-                invch.new_cves[cve["name"]]["issueId"] = issue.id
+                invch.saved_cves[cve["name"]]["issueId"] = issue.id
                 logging.info(f"Created issue: {issue} with Ticket: {cve}")
                 logging.info(f"Remove error mark in CVE: {cve}")
                 # delete the key, value pair with the key error_creating_jira_ticket
