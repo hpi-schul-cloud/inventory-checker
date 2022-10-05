@@ -25,9 +25,6 @@ import version_checker
 class InventoryChecker:
     REQUEST_TIME = Summary("request_processing_seconds", "Time spent processing request")
     STATUS_GRAFANA = Gauge('invch_grafana', 'Success of fetching inventory from grafana in Inventory Checker')
-    STATUS_NVD = Gauge('invch_nvd', 'NVD CVE source available in Inventory Checker')
-    STATUS_CERT = Gauge('invch_cert', 'CERT CVE source available in Inventory Checker')
-    STATUS_CISA = Gauge('invch_cisa', 'CISA CVE source available in Inventory Checker')
     STATUS_INITIAL_FETCH = Gauge('invch_initial_fetch', 'Initial CVE fetching in Inventory Checker completed')
 
     @REQUEST_TIME.time()
