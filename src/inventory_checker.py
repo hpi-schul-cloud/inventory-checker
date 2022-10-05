@@ -38,8 +38,11 @@ class InventoryChecker:
         self.start_date = self.now - Constants.INTERVAL
         logging.info("---------------------------------------------------------------")
         logging.info("Creating log directory...")
-        # TODO: Catch Exception
-        file_util.create_log_dir()
+        try:
+            file_util.create_log_dir()
+        except Exception as e:
+            logging.error("Creating log directory failed.")
+        
         logging.info("---------------------------------------------------------------")
         logging.info("Loading keywords and versions...")
         try:
@@ -53,18 +56,27 @@ class InventoryChecker:
 
         logging.info("---------------------------------------------------------------")
         logging.info("Cleaning old CVE's...")
-        # TODO: Catch Exception
-        file_util.clean_old_cves(self)
+        try:
+            file_util.clean_old_cves(self)
+        except Exception as e:
+            logging.error("Cleaning old CVE's failed, skipping this run.")
+        
 
         logging.info("---------------------------------------------------------------")
         logging.info("Cleaning old Versions's...")
-        # TODO: Catch Exception
-        file_util.clean_old_versions(self)
+        try:
+            file_util.clean_old_versions(self)
+        except Exception as e:
+            logging.error("Cleaning old Versions's failed, skipping this run.")
+        
 
         logging.info("---------------------------------------------------------------")
         logging.info("Clearing prometheus...")
-        # TODO: Catch Exception ???
-        self.clear_prometheus()
+        try:
+            self.clear_prometheus()
+        except Exception as e:
+            logging.error("Clearing prometheus failed, skipping this run.")
+        
 
         logging.info("---------------------------------------------------------------")
         logging.info(f"Looking for: {self.inventory}")
@@ -72,9 +84,14 @@ class InventoryChecker:
         logging.info("---------------------------------------------------------------")
 
 
-        logging.info("Load old CVEs for no duplications:")
-        # TODO: Catch Exception
-        self.saved_cves = file_util.load_cves(self)
+        logging.info("Load saved CVEs from JSON")
+        try:
+            loaded_cves = file_util.load_cves(self)
+            # if successful, overwrite saved_cves in the in-memory dic
+            self.saved_cves = loaded_cves
+        except Exception as e:
+            logging.error("Load saved CVEs from JSON failed, using the in-memory saved_cves dictionary.")
+        
 
         if (len(self.saved_cves) == 0):
             logging.warning(f"No old CVE's found.")
@@ -97,48 +114,49 @@ class InventoryChecker:
         new_cve_size = len(self.new_cves)
 
         # Don't post new cve's because it would spam quiet a lot
-        # if not hasattr(self, "initial_cve_fetching"):
+        if not hasattr(self, "initial_cve_fetching"):
             # Initial fetch already done
-        InventoryChecker.STATUS_INITIAL_FETCH.set(1)
-        if new_cve_size == 0:
-            logging.info(f"No new CVE's within last {Constants.INTERVAL.days} days")
-            number_of_failed_ticket_creations = sum(contains(saved_cve.keys(), "error_creating_jira_ticket") for saved_cve in self.saved_cves.values())
-            if number_of_failed_ticket_creations == 0:
-                logging.info(f"No cve's are marked with an error for a error while Jira Ticket creation.")
+            InventoryChecker.STATUS_INITIAL_FETCH.set(1)
+            if new_cve_size == 0:
+                logging.info(f"No new CVE's within last {Constants.INTERVAL.days} days")
+                number_of_failed_ticket_creations = sum(contains(saved_cve.keys(), "error_creating_jira_ticket") for saved_cve in self.saved_cves.values())
+                if number_of_failed_ticket_creations == 0:
+                    logging.info(f"No cve's are marked with an error for an error while Jira Ticket creation.")
+                else:
+                    logging.info("Creating failed Jira Tickets")
+                    jira_util.create_jira_issues(self)
+
             else:
-                logging.info("Creating failed Jira Tickets")
+                logging.warning(
+                    f"{new_cve_size} new CVE's within last {Constants.INTERVAL.days} days"
+                )
+                for cve in self.new_cves.values():
+                    logging.warning(f"New CVE: {cve}")
+                    logging.info("")
+
+                logging.info("Posting new CVE's...")
+                notifier.post_cve(self.new_cves)
                 jira_util.create_jira_issues(self)
-
         else:
-            logging.warning(
-                f"{new_cve_size} new CVE's within last {Constants.INTERVAL.days} days"
-            )
-            for cve in self.new_cves.values():
-                logging.warning(f"New CVE: {cve}")
-                logging.info("")
-
-            logging.info("Posting new CVE's...")
-            notifier.post_cve(self.new_cves)
-            jira_util.create_jira_issues(self)
-        # else:
-        #     data = {"text": "Connected new Instance"}
-        #     Notifier.post_message(data)
-        #     if partial_fetching_failure:
-        #         InventoryChecker.STATUS_INITIAL_FETCH.set(0)
-        #         logging.warning("Couldn't fetch from all CVE sources in first run. Not saving CVEs to avoid "
-        #                         f"duplicate entries. Trying again in {Constants.SCHEDULER_INTERVAL} minutes.")
-        #     else:
-        #         InventoryChecker.STATUS_INITIAL_FETCH.set(1)
-        #         logging.info("Skipping because it's the first time starting up...")
-        #         for cve in self.new_cves.values():
-        #             self.new_cves[cve["name"]]["notAffected"] = True
-
-        # save new cves
-        
-        # TODO: Catch Exception
-        file_util.save_cves(self)
+            data = {"text": "Connected new Instance"}
+            notifier.post_message(data)
+            if partial_fetching_failure:
+                InventoryChecker.STATUS_INITIAL_FETCH.set(0)
+                logging.warning("Couldn't fetch from all CVE sources in first run. Not saving CVEs to avoid "
+                                f"duplicate entries. Trying again in {Constants.SCHEDULER_INTERVAL} minutes.")
+            else:
+                InventoryChecker.STATUS_INITIAL_FETCH.set(1)
+                logging.info("Skipping because it's the first time starting up...")
+                for cve in self.new_cves.values():
+                    self.new_cves[cve["name"]]["notAffected"] = True
 
         jira_util.check_jira_issues(self)
+
+        logging.info("Saving CVEs to JSON...")
+        try:
+            file_util.save_cves(self)
+        except Exception as e:
+            logging.error("Saving CVEs to JSON failed, using the in-memory saved_cves dictionary.")
 
         self.update_prometheus()
         try:

@@ -49,13 +49,13 @@ def create_jira_issues(invch: InventoryChecker):
             try:
                 issue = jira.create_issue(project=Constants.JIRA_PROJECT_ID, summary=title, description=description, issuetype={"name": Constants.JIRA_ISSUE_TYPE}, priority={"name": SeverityUtil.transformSeverityToJiraPriority(cve["severity"])})
                 invch.saved_cves[cve["name"]]["issueId"] = issue.id
-                logging.info(f"Created issue: {issue} with Ticket: {cve}")
-                logging.info(f"Remove error mark in CVE: {cve}")
+                logging.info(f"\tCreated issue: {issue} with Ticket: {cve}")
+                logging.info(f"\t\tSuccessfully created ticket. Remove error mark for Ticket: {issue}")
                 # delete the key, value pair with the key error_creating_jira_ticket
                 del cve["error_creating_jira_ticket"]
             except Exception as e:
-                logging.error("Error while creating JIRA Tickets: ")
-                logging.info(f"Ticket: {cve}")
+                logging.error("\tError while creating JIRA Tickets: ")
+                logging.info(f"\t\tTicket: {cve}")
                 logging.exception(e)
                 errors_occurs_during_creating_tickets_flag = True
                 continue
@@ -74,10 +74,10 @@ def create_jira_issues(invch: InventoryChecker):
         try:
             issue = jira.create_issue(project=Constants.JIRA_PROJECT_ID, summary=title, description=description, issuetype={"name": Constants.JIRA_ISSUE_TYPE}, priority={"name": SeverityUtil.transformSeverityToJiraPriority(cve["severity"])})
             invch.new_cves[cve["name"]]["issueId"] = issue.id
-            logging.info(f"Created issue: {issue} with Ticket: {cve}")
+            logging.info(f"Created new issue: {issue} with Ticket: {cve}")
         except Exception as e:
-            logging.error("Error while creating JIRA Tickets: ")
-            logging.info(f"Ticket: {cve}")
+            logging.error("\tError while creating JIRA Tickets: ")
+            logging.info(f"\t\tTicket: {cve}")
             cve["error_creating_jira_ticket"] = True
             logging.exception(e)
             errors_occurs_during_creating_tickets_flag = True
@@ -185,8 +185,8 @@ def check_jira_issues(invch: InventoryChecker):
                                 flag_at_least_one_ticket_behind_is_solved_by_links_are_done = True
 
                         except Exception as e :
-                            logging.error(f"link name, linked ticket name or linked Ticket status does not exist")
-                            logging.error(f"Ticket/CVE with resolution Duplicate can not be checked if it's Done")
+                            logging.error(f"\tlink name, linked ticket name or linked Ticket status does not exist")
+                            logging.error(f"\tTicket/CVE with resolution Duplicate can not be checked if it's Done")
                             errors_occurs_during_searching_tickets_flag = True
                             raise Exception(e)
 
@@ -221,5 +221,3 @@ def check_jira_issues(invch: InventoryChecker):
     logging.info("Checked all CVE's")
     logging.info(f"{count_jira_request} requests for Jira were made (Tickets, that were still affected)")
     logging.info(f"{count_new_solved_cves} are marked as solved in this poll")
-
-    file_util.save_cves(invch)

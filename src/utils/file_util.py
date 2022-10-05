@@ -16,7 +16,6 @@ def load_versions():
     if not exists(Constants.VERSION_FILE_PATH):
         return []
 
-    # TODO: may throw an Exception
     file = open(Constants.VERSION_FILE_PATH)
     s = file.read()
     file.close()
@@ -32,7 +31,6 @@ def load_cves(invch: InventoryChecker):
         invch.initial_cve_fetching = True
         return {}
 
-    # TODO: may throw an Exception
     file = open(Constants.CVE_FILE_PATH)
     s = file.read()
     file.close()
@@ -45,7 +43,6 @@ def load_cves(invch: InventoryChecker):
 
 def create_log_dir():
     if not exists(Constants.LOG_DIR_PATH):
-        # TODO: may throw an Exception
         Path(Constants.LOG_DIR_PATH).mkdir(parents=True, exist_ok=True)
 
 
@@ -71,7 +68,6 @@ def clean_old_cves(invch: InventoryChecker):
 
 
 def save_cves(invch: InventoryChecker):
-    # TODO: may throw an Exception
     file = open(Constants.CVE_FILE_PATH, "w")
     invch.saved_cves.update(invch.new_cves)
     file.write(json.dumps(invch.saved_cves))
@@ -99,7 +95,6 @@ def clean_old_versions(invch: InventoryChecker):
 
 
 def save_versions(invch: InventoryChecker):
-    # TODO: may throw an Exception
     file = open(Constants.VERSION_FILE_PATH, "w")
     invch.saved_versions = invch.saved_versions + invch.new_versions
     file.write(json.dumps(invch.saved_versions))
