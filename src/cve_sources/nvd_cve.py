@@ -3,21 +3,28 @@ from operator import contains
 
 import requests
 import semver
+from prometheus_client import Gauge
+
 from constants import Constants
+from cve_sources.abstract_cve_source import CVESource
 from utils.severity_util import SeverityUtil
 
 
-class NvdCVE:
-    def fetch_cves(self):
+class NvdCVEs(CVESource):
+    STATUS_REPORT = Gauge('invch_nvd', 'NVD CVE source available in Inventory Checker')
+    NAME = "NVD"
+
+    @staticmethod
+    def fetch_cves(invch):
         startDate: str = (
-            "?pubStartDate="
-            + self.start_date.isoformat()[:-9].replace(".", ":")
-            + "%20UTC%2B00:00"
+                "?pubStartDate="
+                + invch.start_date.isoformat()[:-9].replace(".", ":")
+                + "%20UTC%2B00:00"
         )
         endDate: str = (
-            "&pubEndDate="
-            + self.now.isoformat()[:-9].replace(".", ":")
-            + "%20UTC%2B00:00"
+                "&pubEndDate="
+                + invch.now.isoformat()[:-9].replace(".", ":")
+                + "%20UTC%2B00:00"
         )
         root: dict = requests.get(
             Constants.NVD_CVE_URL + startDate + endDate + "&resultsPerPage=2000"
@@ -27,35 +34,36 @@ class NvdCVE:
             date: str = child["lastModifiedDate"]
             date_converted: datetime = datetime.strptime(date, "%Y-%m-%dT%H:%Mz")
 
-            if date_converted.timestamp() < self.start_date.timestamp():
+            if date_converted.timestamp() < invch.start_date.timestamp():
                 continue
 
             name: str = child["cve"]["CVE_data_meta"]["ID"]
-            
+
             description_data: list = child["cve"]["description"]["description_data"]
             description = next(
                 (elem for elem in description_data if elem["lang"] == "en"),
                 description_data[0],
             )["value"]
 
-            keyword: bool = next(
+            # First matching keyword or False if no keyword matches (generator empty)
+            keyword = next(
                 (
                     key
-                    for key in self.inventory
+                    for key in invch.inventory
                     if key["keyword"].lower() in description.lower()
                 ),
                 False,
             )
             if keyword:
-                if contains(self.saved_cves.keys(), name):
-                    if contains(self.saved_cves[name].keys(), "notAffected"):
+                if contains(invch.saved_cves.keys(), name):
+                    if contains(invch.saved_cves[name].keys(), "notAffected"):
                         continue
 
                 affected = False
-                impact_data: list = child["impact"]
+                impact_data = child["impact"]
                 severity = "unknown"
 
-                for key in self.inventory:
+                for key in invch.inventory:
                     if affected:
                         break
 
@@ -63,7 +71,7 @@ class NvdCVE:
                     if keyword["keyword"].lower() in description.lower():
                         current_version: str = key["version"]
 
-                        versions = NvdCVE.retrieve_versions(child["configurations"]["nodes"], keyword["keyword"])
+                        versions = NvdCVEs.retrieve_versions(child["configurations"]["nodes"], keyword["keyword"])
 
                         if len(versions) == 0:
                             affected = True
@@ -75,7 +83,7 @@ class NvdCVE:
 
                                 if version_start == "" and version_end == "":
                                     continue
-                                
+
                                 if version_start == "":
                                     if semver.compare(current_version, version_end) <= 0:
                                         affected = True
@@ -84,35 +92,37 @@ class NvdCVE:
                                     if semver.compare(current_version, version_start) >= 0:
                                         affected = True
                                         break
-                                elif semver.compare(current_version, version_start) >= 0 and semver.compare(current_version, version_end) <= 0:
-                                        affected = True
-                                        break
+                                elif semver.compare(current_version, version_start) >= 0 and semver.compare(
+                                        current_version,
+                                        version_end) <= 0:
+                                    affected = True
+                                    break
                         except ValueError:
-                            affected = True # Manual check if version is affected is required
+                            affected = True  # Manual check if version is affected is required
                             break
-                        
+
                 if not affected:
-                    if contains(self.new_cves.keys(), name):
-                        del self.new_cves[name]
-                    if contains(self.saved_cves.keys(), name):
-                        self.saved_cves[name]["notAffected"] = True
+                    if contains(invch.new_cves.keys(), name):
+                        del invch.new_cves[name]
+                    if contains(invch.saved_cves.keys(), name):
+                        invch.saved_cves[name]["notAffected"] = True
                     continue
 
                 if contains(impact_data.keys(), "baseMetricV3"):
                     severity = SeverityUtil.getUniformSeverity(impact_data["baseMetricV3"]["cvssV3"]["baseSeverity"])
 
                 # Replace severity and affected products of cve's that have an unknown severity or empty []
-                if contains(self.saved_cves.keys(), name) or contains(
-                self.new_cves.keys(), name
+                if contains(invch.saved_cves.keys(), name) or contains(
+                        invch.new_cves.keys(), name
                 ):
-                    if self.new_cves.get(name) != None and self.new_cves.get(name)["severity"] == "unknown":
-                        self.new_cves.get(name)["severity"] = severity
+                    if invch.new_cves.get(name) != None and invch.new_cves.get(name)["severity"] == "unknown":
+                        invch.new_cves.get(name)["severity"] = severity
 
-                    if self.new_cves.get(name) != None and len(self.new_cves.get(name)["affected_versions"]) == 0:
-                        self.new_cves.get(name)["affected_versions"] = versions
+                    if invch.new_cves.get(name) != None and len(invch.new_cves.get(name)["affected_versions"]) == 0:
+                        invch.new_cves.get(name)["affected_versions"] = versions
                     continue
 
-                self.new_cves[name] = {
+                invch.new_cves[name] = {
                     "name": name,
                     "url": f"https://nvd.nist.gov/vuln/detail/{name}",
                     "date": date_converted.strftime("%d.%m.%Y"),
@@ -122,12 +132,13 @@ class NvdCVE:
                     "affected_versions": versions,
                 }
 
+    @staticmethod
     def retrieve_versions(child, keyword):
         versions = []
 
         for node_data in child:
             if node_data["operator"] == "AND":
-                NvdCVE.retrieve_versions(node_data["children"], keyword)
+                NvdCVEs.retrieve_versions(node_data["children"], keyword)
 
             if node_data["operator"] == "OR":
                 for version_data in node_data["cpe_match"]:
@@ -136,10 +147,10 @@ class NvdCVE:
 
                     if not contains(version_data.get("cpe23Uri").lower(), keyword.lower()):
                         continue
-                    
+
                     if version_data.get("versionStartIncluding"):
                         start = version_data["versionStartIncluding"]
-                    
+
                     if version_data.get("versionEndExcluding"):
                         end = version_data["versionEndExcluding"]
 
