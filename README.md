@@ -41,7 +41,7 @@ The configuration variables are defined in the ansible group_vars or host_vars. 
 | **JIRA_ISSUE_TYPE** | The issue type that gets assigned to the Jira issue (not the translated form, so not "Aufgabe" but instead "Task") | no | Bug | -, string
 | **JIRA_PRIORITY** | The priority that gets attached to the Jira issue (not the translated form, so not "Hoch" but instead "High")<br><br> Example: <br><br> JIRA_PRIORITY={"critical": "🚨CRITICAL🚨","high": "High","medium": "Medium","low": "Low","unknown": "Medium"} | no | {<br>"critical": "Highest",<br>"high": "High",<br>"medium": "Medium",<br>"low": "Low",<br>"unknown": "Medium"<br>} | -, string
 | **REPO_CREDENTIALS** | The credentials that are needed to fetch from registries like registry-1.docker.io. Provide a password or a token as password <br><br> **Note**: use registry-1.docker.io instead of docker.io <br><br> Example: <br><br> REPO_CREDENTIALS={"registry-1.docker.io": {"username": "maxmustermann","password": "abcdef"}} | no | {} | -, string
-| **GRAFANA_PROMETHEUS_UID** | This is used to filter specific keywords like "node" since it is a term that is broadly used <br><br> Example: <br><br> GRAFANA_PROMETHEUS_UID=["node", "backend"] | no | [] | -, string
+| **KEYWORD_FILTER** | This is used to filter specific keywords like "node" since it is a term that is broadly used <br><br> Example: <br><br> KEYWORD_FILTER=["node", "backend"] | no | [] | -, string
 | **ADDITIONAL_KEYWORDS** | This is used to add additional keywords. For example "bbb" because it can't be fetched over grafana. <br><br> Example: <br><br> ADDITIONAL_KEYWORDS=["bbb"] | no | [] | -, string
 
 \* When using JIRA the marked ENV are required
