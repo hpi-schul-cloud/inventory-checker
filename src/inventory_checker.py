@@ -302,9 +302,7 @@ if __name__ == "__main__":
             logging.info("INTERVAL not available")
 
         if os.getenv("PROMETHEUS_PORT"):
-            Constants.PROMETHEUS_PORT = timedelta(
-                days=int(os.getenv("PROMETHEUS_PORT"))
-            )
+            Constants.PROMETHEUS_PORT = int(os.getenv("PROMETHEUS_PORT"))
             logging.info("PROMETHEUS_PORT loaded = " + str(Constants.PROMETHEUS_PORT))
         else:
             logging.info("PROMETHEUS_PORT not available")
