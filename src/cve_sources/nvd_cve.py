@@ -18,13 +18,11 @@ class NvdCVEs(CVESource):
     def fetch_cves(invch):
         startDate: str = (
                 "?pubStartDate="
-                + invch.start_date.isoformat()[:-9].replace(".", ":")
-                + "%20UTC%2B00:00"
+                + invch.start_date.strftime("%Y-%m-%dT%H:%M:%S.%f")
         )
         endDate: str = (
                 "&pubEndDate="
-                + invch.now.isoformat()[:-9].replace(".", ":")
-                + "%20UTC%2B00:00"
+                + invch.now.strftime("%Y-%m-%dT%H:%M:%S.%f")
         )
         root: dict = requests.get(
             Constants.NVD_CVE_URL + startDate + endDate + "&resultsPerPage=2000"
