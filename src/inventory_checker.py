@@ -53,21 +53,6 @@ class InventoryChecker:
             logging.exception(e)
             InventoryChecker.STATUS_GRAFANA.set(0)
             return
-
-        logging.info("---------------------------------------------------------------")
-        logging.info("Cleaning old CVE's...")
-        try:
-            file_util.clean_old_cves(self)
-        except Exception as e:
-            logging.error("Cleaning old CVE's failed, skipping this run.")
-        
-
-        logging.info("---------------------------------------------------------------")
-        logging.info("Cleaning old Versions's...")
-        try:
-            file_util.clean_old_versions(self)
-        except Exception as e:
-            logging.error("Cleaning old Versions's failed, skipping this run.")
         
 
         logging.info("---------------------------------------------------------------")
