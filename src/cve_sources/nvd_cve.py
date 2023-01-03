@@ -28,16 +28,16 @@ class NvdCVEs(CVESource):
             Constants.NVD_CVE_URL + startDate + endDate + "&resultsPerPage=2000"
         ).json()
 
-        for item in root["vulnerabilities"]:
-            date = item["cve"]["lastModified"]
+        for child in root["vulnerabilities"]:
+            date = child["cve"]["lastModified"]
             date_converted: datetime = datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.%f")
 
-            if date_converted.timestamp() < start_date.timestamp():
+            if date_converted.timestamp() < invch.start_date.timestamp():
                 continue
 
-            name: str = item["cve"]["id"]
+            name: str = child["cve"]["id"]
 
-            description_data: list = item["cve"]["descriptions"]
+            description_data: list = child["cve"]["descriptions"]
 
             description = next(
                 (elem for elem in description_data if elem["lang"] == "en"),
@@ -60,7 +60,7 @@ class NvdCVEs(CVESource):
                         continue
 
                 affected = False
-                impact_data = child["impact"]
+                impact_data = child["cve"]["metrics"]
                 severity = "unknown"
 
                 for key in invch.inventory:
@@ -71,7 +71,7 @@ class NvdCVEs(CVESource):
                     if keyword["keyword"].lower() in description.lower():
                         current_version: str = key["version"]
 
-                        versions = NvdCVEs.retrieve_versions(child["configurations"]["nodes"], keyword["keyword"])
+                        versions = NvdCVEs.retrieve_versions(child["configurations"]["nodes"], keyword["keyword"]) # TODO
 
                         if len(versions) == 0:
                             affected = True
@@ -108,8 +108,8 @@ class NvdCVEs(CVESource):
                         invch.saved_cves[name]["notAffected"] = True
                     continue
 
-                if contains(impact_data.keys(), "baseMetricV3"):
-                    severity = SeverityUtil.getUniformSeverity(impact_data["baseMetricV3"]["cvssV3"]["baseSeverity"])
+                if contains(impact_data.keys(), "baseMetricV30"):
+                    severity = SeverityUtil.getUniformSeverity(impact_data["baseMetricV30"]["cvssData"]["baseSeverity"])
 
                 # Replace severity and affected products of cve's that have an unknown severity or empty []
                 if contains(invch.saved_cves.keys(), name) or contains(
