@@ -71,7 +71,7 @@ class NvdCVEs(CVESource):
                     if keyword["keyword"].lower() in description.lower():
                         current_version: str = key["version"]
 
-                        versions = NvdCVEs.retrieve_versions(child["configurations"]["nodes"], keyword["keyword"]) # TODO
+                        versions = NvdCVEs.retrieve_versions(child["cve"]["configurations"][0]["nodes"], keyword["keyword"])
 
                         if len(versions) == 0:
                             affected = True
@@ -135,31 +135,27 @@ class NvdCVEs(CVESource):
     @staticmethod
     def retrieve_versions(child, keyword):
         versions = []
-
+        
         for node_data in child:
-            if node_data["operator"] == "AND":
-                NvdCVEs.retrieve_versions(node_data["children"], keyword)
+            for version_data in node_data["cpeMatch"]:
+                start = ""
+                end = ""
 
-            if node_data["operator"] == "OR":
-                for version_data in node_data["cpe_match"]:
-                    start = ""
-                    end = ""
+                if not contains(version_data.get("cpe23Uri").lower(), keyword.lower()):
+                    continue
 
-                    if not contains(version_data.get("cpe23Uri").lower(), keyword.lower()):
-                        continue
+                if version_data.get("versionStartIncluding"):
+                    start = version_data["versionStartIncluding"]
 
-                    if version_data.get("versionStartIncluding"):
-                        start = version_data["versionStartIncluding"]
+                if version_data.get("versionEndExcluding"):
+                    end = version_data["versionEndExcluding"]
 
-                    if version_data.get("versionEndExcluding"):
-                        end = version_data["versionEndExcluding"]
+                if start == "" and end == "":
+                    continue
 
-                    if start == "" and end == "":
-                        continue
+                version = start + " - " + end
 
-                    version = start + " - " + end
-
-                    if not contains(versions, version):
-                        versions.append(version)
+                if not contains(versions, version):
+                    versions.append(version)
 
         return versions
