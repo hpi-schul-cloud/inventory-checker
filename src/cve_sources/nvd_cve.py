@@ -28,20 +28,22 @@ class NvdCVEs(CVESource):
             Constants.NVD_CVE_URL + startDate + endDate + "&resultsPerPage=2000"
         ).json()
 
-        for child in root["result"]["CVE_Items"]:
-            date: str = child["lastModifiedDate"]
-            date_converted: datetime = datetime.strptime(date, "%Y-%m-%dT%H:%Mz")
+        for item in root["vulnerabilities"]:
+            date = item["cve"]["lastModified"]
+            date_converted: datetime = datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.%f")
 
-            if date_converted.timestamp() < invch.start_date.timestamp():
+            if date_converted.timestamp() < start_date.timestamp():
                 continue
 
-            name: str = child["cve"]["CVE_data_meta"]["ID"]
+            name: str = item["cve"]["id"]
 
-            description_data: list = child["cve"]["description"]["description_data"]
+            description_data: list = item["cve"]["descriptions"]
+
             description = next(
                 (elem for elem in description_data if elem["lang"] == "en"),
                 description_data[0],
             )["value"]
+            
 
             # First matching keyword or False if no keyword matches (generator empty)
             keyword = next(
