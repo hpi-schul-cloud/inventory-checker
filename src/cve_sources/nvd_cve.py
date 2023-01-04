@@ -18,32 +18,32 @@ class NvdCVEs(CVESource):
     def fetch_cves(invch):
         startDate: str = (
                 "?pubStartDate="
-                + invch.start_date.isoformat()[:-9].replace(".", ":")
-                + "%20UTC%2B00:00"
+                + invch.start_date.strftime("%Y-%m-%dT%H:%M:%S.%f")
         )
         endDate: str = (
                 "&pubEndDate="
-                + invch.now.isoformat()[:-9].replace(".", ":")
-                + "%20UTC%2B00:00"
+                + invch.now.strftime("%Y-%m-%dT%H:%M:%S.%f")
         )
         root: dict = requests.get(
             Constants.NVD_CVE_URL + startDate + endDate + "&resultsPerPage=2000"
         ).json()
 
-        for child in root["result"]["CVE_Items"]:
-            date: str = child["lastModifiedDate"]
-            date_converted: datetime = datetime.strptime(date, "%Y-%m-%dT%H:%Mz")
+        for child in root["vulnerabilities"]:
+            date = child["cve"]["lastModified"]
+            date_converted: datetime = datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.%f")
 
             if date_converted.timestamp() < invch.start_date.timestamp():
                 continue
 
-            name: str = child["cve"]["CVE_data_meta"]["ID"]
+            name: str = child["cve"]["id"]
 
-            description_data: list = child["cve"]["description"]["description_data"]
+            description_data: list = child["cve"]["descriptions"]
+
             description = next(
                 (elem for elem in description_data if elem["lang"] == "en"),
                 description_data[0],
             )["value"]
+            
 
             # First matching keyword or False if no keyword matches (generator empty)
             keyword = next(
@@ -60,7 +60,7 @@ class NvdCVEs(CVESource):
                         continue
 
                 affected = False
-                impact_data = child["impact"]
+                impact_data = child["cve"]["metrics"]
                 severity = "unknown"
 
                 for key in invch.inventory:
@@ -71,7 +71,11 @@ class NvdCVEs(CVESource):
                     if keyword["keyword"].lower() in description.lower():
                         current_version: str = key["version"]
 
-                        versions = NvdCVEs.retrieve_versions(child["configurations"]["nodes"], keyword["keyword"])
+                        if "configurations" in child["cve"]:
+                            versions = NvdCVEs.retrieve_versions(child["cve"]["configurations"][0]["nodes"], keyword["keyword"])
+                            
+                        else: 
+                            versions = []
 
                         if len(versions) == 0:
                             affected = True
@@ -108,8 +112,8 @@ class NvdCVEs(CVESource):
                         invch.saved_cves[name]["notAffected"] = True
                     continue
 
-                if contains(impact_data.keys(), "baseMetricV3"):
-                    severity = SeverityUtil.getUniformSeverity(impact_data["baseMetricV3"]["cvssV3"]["baseSeverity"])
+                if contains(impact_data.keys(), "baseMetricV30"):
+                    severity = SeverityUtil.getUniformSeverity(impact_data["baseMetricV30"]["cvssData"]["baseSeverity"])
 
                 # Replace severity and affected products of cve's that have an unknown severity or empty []
                 if contains(invch.saved_cves.keys(), name) or contains(
@@ -135,31 +139,27 @@ class NvdCVEs(CVESource):
     @staticmethod
     def retrieve_versions(child, keyword):
         versions = []
-
+        
         for node_data in child:
-            if node_data["operator"] == "AND":
-                NvdCVEs.retrieve_versions(node_data["children"], keyword)
+            for version_data in node_data["cpeMatch"]:
+                start = ""
+                end = ""
 
-            if node_data["operator"] == "OR":
-                for version_data in node_data["cpe_match"]:
-                    start = ""
-                    end = ""
+                if not contains(version_data.get("criteria").lower(), keyword.lower()):
+                    continue
 
-                    if not contains(version_data.get("cpe23Uri").lower(), keyword.lower()):
-                        continue
+                if version_data.get("versionStartIncluding"):
+                    start = version_data["versionStartIncluding"]
 
-                    if version_data.get("versionStartIncluding"):
-                        start = version_data["versionStartIncluding"]
+                if version_data.get("versionEndExcluding"):
+                    end = version_data["versionEndExcluding"]
 
-                    if version_data.get("versionEndExcluding"):
-                        end = version_data["versionEndExcluding"]
+                if start == "" and end == "":
+                    continue
 
-                    if start == "" and end == "":
-                        continue
+                version = start + " - " + end
 
-                    version = start + " - " + end
-
-                    if not contains(versions, version):
-                        versions.append(version)
+                if not contains(versions, version):
+                    versions.append(version)
 
         return versions
