@@ -141,7 +141,7 @@ class NvdCVEs(CVESource):
                 start = ""
                 end = ""
 
-                if not contains(version_data.get("cpe23Uri").lower(), keyword.lower()):
+                if not contains(version_data.get("criteria").lower(), keyword.lower()):
                     continue
 
                 if version_data.get("versionStartIncluding"):
