@@ -72,7 +72,7 @@ class NvdCVEs(CVESource):
                         current_version: str = key["version"]
 
                         if "configurations" in child["cve"]:
-                            versions = NvdCVEs.retrieve_versions(child["cve"]["configurations"][0]["nodes"], "test")
+                            versions = NvdCVEs.retrieve_versions(child["cve"]["configurations"][0]["nodes"], keyword["keyword"])
                             
                         else: 
                             versions = []
