@@ -71,7 +71,11 @@ class NvdCVEs(CVESource):
                     if keyword["keyword"].lower() in description.lower():
                         current_version: str = key["version"]
 
-                        versions = NvdCVEs.retrieve_versions(child["cve"]["configurations"][0]["nodes"], keyword["keyword"])
+                        if "configurations" in child["cve"]:
+                            versions = NvdCVEs.retrieve_versions(child["cve"]["configurations"][0]["nodes"], "test")
+                            
+                        else: 
+                            versions = []
 
                         if len(versions) == 0:
                             affected = True
