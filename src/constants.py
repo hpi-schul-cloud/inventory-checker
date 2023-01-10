@@ -5,7 +5,7 @@ class Constants:
     LOG_DIR_PATH = "src/logs"
     CVE_FILE_PATH = LOG_DIR_PATH + "/cves.json"
     VERSION_FILE_PATH = LOG_DIR_PATH + "/versions.json"
-    INTERVAL = timedelta(days=30)
+    INTERVAL = timedelta(days=1)
     SCHEDULER_INTERVAL = 60
     INVENTORY_FILE_PATH = "src/json/inventory_list.json"
     PROMETHEUS_PORT = 9000

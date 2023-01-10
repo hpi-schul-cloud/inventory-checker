@@ -24,11 +24,29 @@ class NvdCVEs(CVESource):
                 "&pubEndDate="
                 + invch.now.strftime("%Y-%m-%dT%H:%M:%S.%f")
         )
-        root: dict = requests.get(
-            Constants.NVD_CVE_URL + startDate + endDate + "&resultsPerPage=2000"
-        ).json()
+        
+        all_cves_parsed_flag: bool = False
+        start_index = 0
+        root: list = []
 
-        for child in root["vulnerabilities"]:
+        while not all_cves_parsed_flag:
+            result: list = requests.get(
+                Constants.NVD_CVE_URL + startDate + endDate + "&resultsPerPage=2000" + "&startIndex=" + str(start_index)
+                ).json()
+            if start_index == 0:
+                root = result["vulnerabilities"]
+            else:
+                root.extend(result["vulnerabilities"])
+            total_results: int = root["totalResults"]
+            results_loaded: int = result["resultsPerPage"] + result["startIndex"]
+            if total_results <= (results_loaded) or result["resultsPerPage"] == 0:
+                all_cves_parsed_flag = True
+            else:
+                start_index = start_index + 1999
+            
+
+
+        for child in root:
             date = child["cve"]["lastModified"]
             date_converted: datetime = datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.%f")
 
