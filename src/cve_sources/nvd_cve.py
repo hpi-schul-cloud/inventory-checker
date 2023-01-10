@@ -37,7 +37,7 @@ class NvdCVEs(CVESource):
                 root = result["vulnerabilities"]
             else:
                 root.extend(result["vulnerabilities"])
-            total_results: int = root["totalResults"]
+            total_results: int = result["totalResults"]
             results_loaded: int = result["resultsPerPage"] + result["startIndex"]
             if total_results <= (results_loaded) or result["resultsPerPage"] == 0:
                 all_cves_parsed_flag = True
