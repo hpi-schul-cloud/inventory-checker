@@ -17,7 +17,6 @@ permissions:
 # Template Single Image Repro GHA
 jobs:
   trivy_image_scan_cron:
-    uses: hpi-schul-cloud/infra-tools/.github/workflows/trivy-scan.yaml@OPS-3814-add-Image-Vulnerability-Scanning
-    # uses: hpi-schul-cloud/infra-tools/.github/workflows/trivy-scan.yaml@master
+    uses: hpi-schul-cloud/infra-tools/.github/workflows/trivy-scan.yaml@master
     with:
       image-ref: 'docker.io/schulcloudci/invch:latest'
