@@ -30,4 +30,5 @@ def init_prometheus():
 
 
 def sanitize_string(input: str):
+    """Replaces all characters except alphanumerics with an underscore to create a valid metric name"""
     return re.sub("\\W+", "_", input)
