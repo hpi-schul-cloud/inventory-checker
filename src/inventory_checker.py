@@ -193,7 +193,7 @@ class InventoryChecker:
             if len(cve["affected_versions"]) == 0:
                 AFFECTED_PRODUCT_VERSIONS = Info(
                         "affected_product_versions_"
-                        + cve["name"].replace("-", "_")
+                        + prometheus_util.sanitize_string(cve["name"])
                         + "",
                         "The affected versions per product",
                     )
@@ -210,8 +210,8 @@ class InventoryChecker:
                 for versions in cve["affected_versions"]:
                     AFFECTED_PRODUCT_VERSIONS = Info(
                         "affected_product_versions_"
-                        + cve["name"].replace("-", "_")
-                        + versions.replace(" - ", "_").replace(".", "_"),
+                        + prometheus_util.sanitize_string(cve["name"])
+                        + prometheus_util.sanitize_string(versions),
                         "The affected versions per product",
                     )
                     AFFECTED_PRODUCT_VERSIONS.info(

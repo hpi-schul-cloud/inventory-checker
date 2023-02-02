@@ -1,5 +1,6 @@
 import logging
 import json
+import re
 
 from prometheus_client import Info, start_http_server
 from constants import Constants
@@ -26,3 +27,8 @@ def init_prometheus():
             "uses_rocketchat": str(True) if Constants.ROCKETCHAT_WEBHOOK != None else str(False)
         }
     )
+
+
+def sanitize_string(input: str):
+    """Replaces all characters except alphanumerics with an underscore to create a valid metric name"""
+    return re.sub("\\W+", "_", input)
