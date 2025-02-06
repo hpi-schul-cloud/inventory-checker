@@ -64,6 +64,13 @@ class NvdCVEs(CVESource):
             
 
             # First matching keyword or False if no keyword matches (generator empty)
+            affected_packages = []
+            if "configurations" in child["cve"]:
+                for node in child["cve"]["configurations"]["nodes"]:
+                    for cpe_match in node.get("cpe_match", []):
+                        product = cpe_match.get("criteria", "").split(":")
+                        if len(product) > 4:
+                            affected_packages.append(product[3])
             keyword = next(
                 (
                     key
@@ -72,6 +79,15 @@ class NvdCVEs(CVESource):
                 ),
                 False,
             )
+            if not affected_packages and not keyword:
+                continue
+            
+            affected_versions = []
+            if "configurations" in child["cve"]:
+                for node in child["cve"]["configurations"]["nodes"]:
+                    versions = NvdCVEs.retrieve_versions(node["cpeMatch"], affected_packages) 
+                    affected_versions.extend(versions)
+
             if keyword:
                 if contains(invch.saved_cves.keys(), name):
                     if contains(invch.saved_cves[name].keys(), "notAffected"):
@@ -148,10 +164,11 @@ class NvdCVEs(CVESource):
                     "name": name,
                     "url": f"https://nvd.nist.gov/vuln/detail/{name}",
                     "date": date_converted.strftime("%d.%m.%Y"),
-                    "keyword": keyword["keyword"].lower(),
+                    "keyword": keyword["keyword"].lower() if keyword else "Unknown",
+                    "affected_package": keyword["keyword"].lower() if keyword else "Unknown",
                     "description": description,
                     "severity": severity,
-                    "affected_versions": versions,
+                    "affected_versions": affected_versions,
                 }
 
     @staticmethod

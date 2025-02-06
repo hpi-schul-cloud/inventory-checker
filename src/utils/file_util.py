@@ -1,5 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
+import logging
+import os
 
 if TYPE_CHECKING:
     from inventory_checker import InventoryChecker
@@ -46,10 +48,16 @@ def create_log_dir():
 
 
 def save_cves(invch: InventoryChecker):
-    file = open(Constants.CVE_FILE_PATH, "w")
-    invch.saved_cves.update(invch.new_cves)
-    file.write(json.dumps(invch.saved_cves))
-    file.close()
+    try:
+        invch.saved_cves.update(invch.new_cves)
+
+        with open(Constants.CVE_FILE_PATH, "w", encoding="utf-8") as file:
+            json.dump(invch.saved_cves, file, indent=4)
+
+        logging.info(f"Saved {len(invch.saved_cves)} CVEs to {Constants.CVE_FILE_PATH}")
+
+    except Exception as e:
+        logging.error(f"Error saving CVEs: {e}")
 
 
 def save_versions(invch: InventoryChecker):

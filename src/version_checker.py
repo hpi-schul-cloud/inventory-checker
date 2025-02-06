@@ -42,7 +42,7 @@ def check_versions(invch: InventoryChecker):
             currentHash = tag.split(":")[1]
         else:
             try:
-                currentHash = registry._get_dcd(tag)
+                currentHash = registry.get_digest(tag)
             except exceptions.DXFUnauthorizedError:
                 message = 'Credentials for repo "' + host + '" are missing or are wrong!'
                 if contains_message(invch.saved_versions, message) or contains(messages, message):
@@ -62,7 +62,7 @@ def check_versions(invch: InventoryChecker):
 
         try:
             try:
-                latestHash = registry._get_dcd("latest")
+                latestHash = registry.get_digest("latest")
             except exceptions.DXFUnauthorizedError:
                 message = 'Credentials for repo "' + host + '" are missing or are wrong!'
                 if contains_message(invch.saved_versions, message) or contains(messages, message):
@@ -72,7 +72,7 @@ def check_versions(invch: InventoryChecker):
                 logging.warning(message)
                 continue
             except requests.exceptions.HTTPError:
-                latestHash = registry._get_dcd("main")
+                latestHash = registry.get_digest("main")
         except requests.exceptions.HTTPError:
             message = "Latest tag not found for: " + image_full
             if contains_message(invch.saved_versions, message) or contains(messages, message):
@@ -91,7 +91,7 @@ def check_versions(invch: InventoryChecker):
             messages.append(message)
             logging.warning(message)
 
-    logging.info("Found " + str(len(messages)) + " version mismatches or issues!")
+    logging.info("Found " + str(len(messages)) + " version mismatch<es or issues!")
 
     if len(messages) != 0:
         logging.info("Posting version info message...")
