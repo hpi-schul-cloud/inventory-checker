@@ -6,7 +6,6 @@ from prometheus_client import Gauge
 from constants import Constants
 from cve_sources.abstract_cve_source import CVESource
 from utils.severity_util import SeverityUtil
-from utils.grafana_fetcher import map_cves_from_cert
 import json
 import re
 
@@ -36,7 +35,7 @@ class CertCVEs(CVESource):
             if date_converted.timestamp() < invch.start_date.timestamp():
                 continue
 
-            name: str = child["cves"][-1]  # Get the last CVE in the list
+            name: str = child["cves"][-1]  
             description = child["title"].lower()
 
             matched_package = next(
@@ -48,14 +47,12 @@ class CertCVEs(CVESource):
                 (key for key in invch.inventory if key["keyword"].lower() in description.lower()),
                 False 
             )
-            print("INVCH IMAGES", invch.images)
-            # print("Matched Image", matched_image)
 
             if matched_package:
                 matched_entry = matched_package
                 matched_type = "package"
             elif keyword:
-                matched_entry = {"keyword": keyword, "version": "unknown"}  # Store images as dicts
+                matched_entry = {"keyword": keyword, "version": "unknown"}  
                 matched_type = "image"
             else:
                 continue  
@@ -77,7 +74,7 @@ class CertCVEs(CVESource):
                     break
 
             if exit_flag:
-                continue  # Skip duplicate
+                continue  
 
             invch.new_cves[name] = {
                 "name": name,
@@ -87,8 +84,7 @@ class CertCVEs(CVESource):
                 "description": description,
                 "severity": severity,
                 "affected_versions": [matched_entry["version"]] if matched_entry.get("version") else [],
-                "type": matched_type  # Track type (package or image)
+                "type": matched_type  
             }
 
             
-            print(f"Matched {name} to `{matched_entry['keyword']}` (Type: {matched_type}, Version: {matched_entry['version']})")

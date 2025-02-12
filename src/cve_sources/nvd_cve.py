@@ -8,6 +8,7 @@ from prometheus_client import Gauge
 from constants import Constants
 from cve_sources.abstract_cve_source import CVESource
 from utils.severity_util import SeverityUtil
+import re
 
 
 class NvdCVEs(CVESource):
@@ -52,7 +53,6 @@ class NvdCVEs(CVESource):
 
             if date_converted.timestamp() < invch.start_date.timestamp():
                 continue
-
             name: str = child["cve"]["id"]
 
             description_data: list = child["cve"]["descriptions"]
@@ -62,15 +62,7 @@ class NvdCVEs(CVESource):
                 description_data[0],
             )["value"]
             
-
             # First matching keyword or False if no keyword matches (generator empty)
-            affected_packages = []
-            if "configurations" in child["cve"]:
-                for node in child["cve"]["configurations"]["nodes"]:
-                    for cpe_match in node.get("cpe_match", []):
-                        product = cpe_match.get("criteria", "").split(":")
-                        if len(product) > 4:
-                            affected_packages.append(product[3])
             keyword = next(
                 (
                     key
@@ -79,15 +71,19 @@ class NvdCVEs(CVESource):
                 ),
                 False,
             )
-            if not affected_packages and not keyword:
-                continue
-            
-            affected_versions = []
-            if "configurations" in child["cve"]:
-                for node in child["cve"]["configurations"]["nodes"]:
-                    versions = NvdCVEs.retrieve_versions(node["cpeMatch"], affected_packages) 
-                    affected_versions.extend(versions)
+            matched_package = next(
+                (pkg for pkg in invch.packages if re.search(rf'\b{re.escape(pkg["keyword"].lower())}\b', description)),
+                False
+            )
 
+            if matched_package:
+                matched_entry = matched_package
+                matched_type = "package"
+            elif keyword:
+                matched_entry = {"keyword": keyword, "version": "unknown"}  
+                matched_type = "image"
+            else:
+                continue  
             if keyword:
                 if contains(invch.saved_cves.keys(), name):
                     if contains(invch.saved_cves[name].keys(), "notAffected"):
@@ -164,12 +160,14 @@ class NvdCVEs(CVESource):
                     "name": name,
                     "url": f"https://nvd.nist.gov/vuln/detail/{name}",
                     "date": date_converted.strftime("%d.%m.%Y"),
-                    "keyword": keyword["keyword"].lower() if keyword else "Unknown",
-                    "affected_package": keyword["keyword"].lower() if keyword else "Unknown",
+                    "keyword": matched_entry["keyword"],
                     "description": description,
                     "severity": severity,
-                    "affected_versions": affected_versions,
+                    # "affected_versions": versions,
+                    "affected_versions": [matched_entry["version"]] if matched_entry.get("version") else [],
+                    "type": matched_type  
                 }
+
 
     @staticmethod
     def retrieve_versions(child, keyword):
@@ -197,4 +195,4 @@ class NvdCVEs(CVESource):
                 if not contains(versions, version):
                     versions.append(version)
 
-        return versions
+        return versions 

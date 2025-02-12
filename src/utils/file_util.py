@@ -54,8 +54,6 @@ def save_cves(invch: InventoryChecker):
         with open(Constants.CVE_FILE_PATH, "w", encoding="utf-8") as file:
             json.dump(invch.saved_cves, file, indent=4)
 
-        logging.info(f"Saved {len(invch.saved_cves)} CVEs to {Constants.CVE_FILE_PATH}")
-
     except Exception as e:
         logging.error(f"Error saving CVEs: {e}")
 

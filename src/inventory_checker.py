@@ -22,7 +22,6 @@ import utils.prometheus_util as prometheus_util
 import version_checker
 
 
-
 class InventoryChecker:
     REQUEST_TIME = Summary("request_processing_seconds", "Time spent processing request")
     STATUS_GRAFANA = Gauge('invch_grafana', 'Success of fetching inventory from grafana in Inventory Checker')
@@ -47,8 +46,6 @@ class InventoryChecker:
         logging.info("---------------------------------------------------------------")
         logging.info("Loading keywords and versions...")
         try:
-            self.packages = []
-            self.images = []
             self.inventory = grafana_fetcher.load_inventory(self)
             InventoryChecker.STATUS_GRAFANA.set(1)
         except Exception as e:
@@ -91,7 +88,7 @@ class InventoryChecker:
         self.new_cves = {}
 
         partial_fetching_failure = False
-        
+
         # VuldbCVE no longer used because it is chargeable. The CVE's are also displayed in NVD.
         sources = [CisaCVEs, CertCVEs, NvdCVEs]
 
@@ -156,8 +153,6 @@ class InventoryChecker:
         logging.info("")
         logging.info("=======================")
         logging.info("")
-        logging.info("Finished run")
-    
 
     def clear_prometheus(self):
         names = list(REGISTRY._names_to_collectors.keys())
@@ -355,7 +350,6 @@ if __name__ == "__main__":
 
         schedule.every(Constants.SCHEDULER_INTERVAL).minutes.do(lambda: InventoryChecker().run())
         schedule.run_all()
-        
 
         while True:
             schedule.run_pending()
