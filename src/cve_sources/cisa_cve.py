@@ -6,6 +6,7 @@ from prometheus_client import Gauge
 from constants import Constants
 from cve_sources.abstract_cve_source import CVESource
 from utils.severity_util import SeverityUtil
+import json
 
 class CisaCVEs(CVESource):
     STATUS_REPORT = Gauge('invch_cisa', 'CISA CVE source available in Inventory Checker')
@@ -19,15 +20,6 @@ class CisaCVEs(CVESource):
             return
         root: dict = requests.get(Constants.CISA_CVE_URL).json()
 
-
-
-        if not hasattr(invch, "packages"):
-            invch.packages = []
-        if not hasattr(invch, "images"):
-            invch.images = []
-        if not hasattr(invch, "new_cves"):
-            invch.new_cves = {}
-
         for child in root["vulnerabilities"]:
             date: str = child["dateAdded"]
             date_converted: datetime = datetime.strptime(date, "%Y-%m-%d")
@@ -40,10 +32,11 @@ class CisaCVEs(CVESource):
 
             product: str = child["product"].lower()
             vendor_project: str = child["vendorProject"].lower()
+            vulnerability_name: str = child["vulnerabilityName"].lower()
 
             
             matched_package = next(
-                (pkg for pkg in invch.packages if re.search(rf'\b{re.escape(pkg["keyword"].lower())}\b', product)),
+                (pkg for pkg in invch.packages if re.search(rf'\b{re.escape(pkg["keyword"].lower())}\b', vulnerability_name)),
                 False
             )
 
@@ -93,7 +86,8 @@ class CisaCVEs(CVESource):
                 "description": description,
                 "severity": severity,
                 "affected_versions": [matched_entry["version"]] if matched_entry.get("version") else [],
-                "type": matched_type  
+                "type": matched_type,
+                "fromDB": "CISA"
             }
 
             

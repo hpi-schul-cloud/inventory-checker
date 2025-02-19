@@ -9,6 +9,7 @@ from constants import Constants
 from cve_sources.abstract_cve_source import CVESource
 from utils.severity_util import SeverityUtil
 import re
+import json
 
 
 class NvdCVEs(CVESource):
@@ -44,9 +45,8 @@ class NvdCVEs(CVESource):
                 all_cves_parsed_flag = True
             else:
                 start_index = start_index + 1999
-            
 
-
+        
         for child in root:
             date = child["cve"]["lastModified"]
             date_converted: datetime = datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.%f")
@@ -61,29 +61,31 @@ class NvdCVEs(CVESource):
                 (elem for elem in description_data if elem["lang"] == "en"),
                 description_data[0],
             )["value"]
-            
+
+
             # First matching keyword or False if no keyword matches (generator empty)
             keyword = next(
-                (
-                    key
-                    for key in invch.inventory
-                    if key["keyword"].lower() in description.lower()
-                ),
-                False,
+                (key for key in invch.inventory if re.search(rf'\b{re.escape(key["keyword"].lower())}\b', description, re.IGNORECASE)),
+                False
             )
-            matched_package = next(
-                (pkg for pkg in invch.packages if re.search(rf'\b{re.escape(pkg["keyword"].lower())}\b', description)),
+ 
+
+            matched_docker_compose = next(
+                (img for img in invch.images if (
+                    img["container_name"].lower() in description or
+                    img["compose_service"].lower() in description
+                )),
                 False
             )
 
-            if matched_package:
-                matched_entry = matched_package
-                matched_type = "package"
-            elif keyword:
+            if keyword:
                 matched_entry = {"keyword": keyword, "version": "unknown"}  
                 matched_type = "image"
+            elif matched_docker_compose:
+                matched_entry = matched_docker_compose
+                matched_type = "docker-compose"
             else:
-                continue  
+               continue 
             if keyword:
                 if contains(invch.saved_cves.keys(), name):
                     if contains(invch.saved_cves[name].keys(), "notAffected"):
@@ -156,16 +158,18 @@ class NvdCVEs(CVESource):
                         invch.new_cves.get(name)["affected_versions"] = versions
                     continue
 
+                keyword_value = matched_entry.get("keyword", matched_entry.get("container_name", "unknown"))
+
                 invch.new_cves[name] = {
                     "name": name,
                     "url": f"https://nvd.nist.gov/vuln/detail/{name}",
                     "date": date_converted.strftime("%d.%m.%Y"),
-                    "keyword": matched_entry["keyword"],
+                    "keyword": keyword_value,
                     "description": description,
                     "severity": severity,
-                    # "affected_versions": versions,
                     "affected_versions": [matched_entry["version"]] if matched_entry.get("version") else [],
-                    "type": matched_type  
+                    "type": matched_type,
+                    "from": "NVD"
                 }
 
 

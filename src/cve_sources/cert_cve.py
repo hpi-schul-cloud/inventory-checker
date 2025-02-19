@@ -18,12 +18,6 @@ class CertCVEs(CVESource):
     def fetch_cves(invch):
         root: dict = requests.get(Constants.CERT_CVE_URL).json()
 
-        if not hasattr(invch, "packages"):
-            invch.packages = []
-        if not hasattr(invch, "images"):
-            invch.images = []
-        if not hasattr(invch, "new_cves"):
-            invch.new_cves = {}
 
         for child in root["content"]:
             if len(child["cves"]) == 0:
@@ -48,14 +42,25 @@ class CertCVEs(CVESource):
                 False 
             )
 
+            matched_docker_compose = next(
+                (img for img in invch.images if (
+                    img["container_name"].lower() in description or
+                    img["compose_service"].lower() in description
+                )),
+                False
+            )
+
             if matched_package:
                 matched_entry = matched_package
                 matched_type = "package"
             elif keyword:
                 matched_entry = {"keyword": keyword, "version": "unknown"}  
                 matched_type = "image"
+            elif matched_docker_compose:
+                matched_entry = matched_docker_compose
+                matched_type = "docker-compose"
             else:
-                continue  
+               continue 
 
             if contains(invch.saved_cves.keys(), name):
                 if contains(invch.saved_cves[name].keys(), "notAffected"):
@@ -76,15 +81,21 @@ class CertCVEs(CVESource):
             if exit_flag:
                 continue  
 
+            affected_version = matched_entry["version"] if matched_entry.get("version") and matched_entry["version"] != "latest" else "unknown"
+
+            keyword_value = matched_entry.get("keyword", matched_entry.get("container_name", "unknown"))
+
+
+
             invch.new_cves[name] = {
                 "name": name,
                 "url": f"https://wid.cert-bund.de/portal/wid/securityadvisory?name={child['name']}",
                 "date": date_converted.strftime("%d.%m.%Y"),
-                "keyword": matched_entry["keyword"],
+                "keyword": keyword_value,
                 "description": description,
                 "severity": severity,
-                "affected_versions": [matched_entry["version"]] if matched_entry.get("version") else [],
-                "type": matched_type  
+                "affected_versions": [affected_version],
+                "type": matched_type,
             }
 
             

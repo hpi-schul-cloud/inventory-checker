@@ -10,9 +10,28 @@ import requests
 from dxf import DXF, exceptions
 from constants import Constants
 import notifier
+import socket
 import utils.file_util
 import subprocess
+import json
 
+
+def get_host_or_default(image_full: str) -> str:
+    # Wenn kein Host angegeben ist (kein '/' im Namen), setze den Host auf "docker.io"
+    if "/" not in image_full:
+        return "docker.io"
+    
+    # Extrahiere den Host aus dem Image, wenn "/" vorhanden ist
+    host = image_full.split("/")[0]
+    
+    # Versuche, den Host aufzulösen, um sicherzustellen, dass er gültig ist
+    try:
+        socket.gethostbyname(host)  # Versuche, den Hostnamen aufzulösen
+        return host
+    except socket.gaierror:
+        # Wenn der Host ungültig ist, setze ihn auf 'docker.io'
+        return "docker.io"
+    
 
 def check_versions(invch: InventoryChecker):
     logging.info("")
@@ -24,7 +43,9 @@ def check_versions(invch: InventoryChecker):
     invch.saved_versions = utils.file_util.load_versions()
     messages = []
 
-    for image_full in invch.images:
+
+    for container in invch.images:
+        image_full = container["image"]
         logging.info(f"Checking: {image_full}")
         host = image_full[: image_full.find("/")]
         image_nr = image_full.removeprefix(host + "/")
@@ -91,6 +112,7 @@ def check_versions(invch: InventoryChecker):
 
             messages.append(message)
             logging.warning(message)
+
     
     for package in invch.packages:
         package_name = package["keyword"]
@@ -156,4 +178,4 @@ def get_latest_package_version(package_name: str):
     except Exception as e:
         logging.warning(f"Error fetching latest version for {package_name} via APT: {e}")
 
-    return "unknown"  
+    return "unknown"    

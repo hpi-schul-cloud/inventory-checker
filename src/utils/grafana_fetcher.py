@@ -47,9 +47,6 @@ def fetch_prometheus_data():
 
 
 def extract_packages(prometheus_data):
-    """
-    Extracts package names and versions from Prometheus data.
-    """
     packages = []
     for frame in prometheus_data.get("results", {}).get("B", {}).get("frames", []):
         schema_fields = frame.get("schema", {}).get("fields", [])
@@ -69,14 +66,33 @@ def extract_packages(prometheus_data):
 def extract_images(prometheus_data):
     
     images = []
+
     for frame in prometheus_data.get("results", {}).get("A", {}).get("frames", []):
         schema_fields = frame.get("schema", {}).get("fields", [])
         for field in schema_fields:
             labels = field.get("labels", {})
             if "image" in labels:
-                image = labels["image"]
-                if image not in images:
-                    images.append(image)
+                image_full = labels["image"]
+                image_parts = image_full.split(":")
+                image_name = image_parts[0]
+                image_version = re.sub(r"^v|-.+", "", image_parts[1]) if len(image_parts) > 1 else "latest"
+
+                # if image does not contain a registry, add docker.io
+                if "." not in image_name.split("/")[0]:
+                    image_full = f"docker.io/{image_full}"
+
+                container_type = "docker-compose" if "container_label_com_docker_compose_project" in labels else "registry"
+
+                images.append({
+                    "image": image_full,
+                    "keyword": image_name.split("/")[-1].replace("@sha256", ""),
+                    "version": image_version,
+                    "type": container_type,
+                    "container_name": labels.get("image", "unknown"),
+                    "compose_project": labels.get("container_label_com_docker_compose_project", "unknown"),
+                    "compose_service": labels.get("container_label_com_docker_compose_service", "unknown"),
+                })
+
     return images
 
 
@@ -86,33 +102,31 @@ def load_inventory(invch: InventoryChecker):
     if not response:
         print("Failed to fetch inventory data from Prometheus.")
         return []
-    if not hasattr(invch, "new_cves"):
-        invch.new_cves = {} 
 
     invch.packages = extract_packages(response)
     invch.images = extract_images(response)
+    docker_compose_images = []
+    registry_images = []
     keywords = []
 
+    for container in invch.images:
 
+        if any(ignored in container["image"] for ignored in Constants.IGNORED_IMAGES_REPO):
+            continue
 
-    for image_full in invch.images:
-        repo = image_full[: image_full.find("/")]
-        image_nr = image_full.removeprefix(repo + "/")
-        image = image_nr.split(":")[0]
-        image_version = image_nr.split(":")[1]
+        if container["type"] == "docker-compose":
+            docker_compose_images.append(container)
+        else:
+            registry_images.append(container)
 
-        image_splitted = image.split("/")
+    keywords.extend(docker_compose_images)
+    keywords.extend(registry_images)
 
-        keyword = (image_splitted[1] if len(image_splitted) == 2 else image_splitted[0]).replace("@sha256", "")
+    keywords = [
+        kw for kw in keywords
+        if kw["keyword"].lower() not in map(str.lower, Constants.KEYWORD_FILTER)
+    ]
 
-        if not contains(list(map(lambda e: e["keyword"], keywords)), keyword) and not contains(
-                list(map(lambda e: e.lower(), Constants.KEYWORD_FILTER)), keyword.lower()):
-            keywords.append({
-                "keyword": keyword,
-                "version": image_version,
-                "type": "image"
-            })
-        
 
     for additional_keyword in Constants.ADDITIONAL_KEYWORDS:
         if not contains(list(map(lambda e: e["keyword"], keywords)), additional_keyword):
@@ -130,3 +144,9 @@ def load_inventory(invch: InventoryChecker):
 
 
     return keywords
+
+
+def mark_container_source(container_labels):
+    if "container_label_com_docker_compose_project" in container_labels:
+        return "docker-compose"
+    return "registry" 

@@ -5,7 +5,7 @@ class Constants:
     LOG_DIR_PATH = "src/logs"
     CVE_FILE_PATH = LOG_DIR_PATH + "/cves.json"
     VERSION_FILE_PATH = LOG_DIR_PATH + "/versions.json"
-    INTERVAL = timedelta(days=1)
+    INTERVAL = timedelta(days=5)
     PACKAGE_SOURCE = "APT"
     SCHEDULER_INTERVAL = 5
     INVENTORY_FILE_PATH = "src/json/inventory_list.json"
@@ -27,8 +27,9 @@ class Constants:
         "low": "Low",
         "unknown": "Medium"
     }
-    KEYWORD_FILTER=[]
+    KEYWORD_FILTER=["controller"]
     ADDITIONAL_KEYWORDS=[]
+    IGNORED_IMAGES_REPO=["harbor.infra.cluster.ionos.com"]
 
     # CVE Source URLs
     CISA_CVE_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
