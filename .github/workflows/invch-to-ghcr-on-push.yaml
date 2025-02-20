@@ -21,7 +21,7 @@ jobs:
       packages: write
       security-events: write
       contents: read
-    uses: dBildungsplattform/dbp-github-workflows/.github/workflows/image-publish-trivy.yaml@7.0.0
+    uses: dBildungsplattform/dbp-github-workflows/.github/workflows/image-publish-trivy.yaml@7
     with:
       image_name: "invch"
       container_registry: "ghcr.io"
