@@ -68,7 +68,6 @@ class NvdCVEs(CVESource):
                 False
             )
  
-
             matched_docker_compose = next(
                 (img for img in invch.images if (
                     img["container_name"].lower() in description or
