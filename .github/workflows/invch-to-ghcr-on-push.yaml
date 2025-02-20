@@ -11,46 +11,20 @@ on:
       - 'Dockerfile'
   workflow_dispatch:
 
+concurrency:
+  group: invch-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  skip_ci:
-    runs-on: ubuntu-latest
-    # Map the output to the job's outputs
-    outputs:
-      canSkip: ${{ steps.check.outputs.canSkip }}
-    steps:
-      - id: check
-        uses: Legorooj/skip-ci@main
-
-  build_and_push_docker_to_ghcr:
-    # Wait for the skip_ci job to run
-    needs: skip_ci
-    # And only run the build if canSkip isn't 'true'.
-    if: ${{ needs.skip_ci.outputs.canSkip != 'true' }}
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
-
-      - name: Docker meta Service Name for docker hub
-        id: docker_meta_img_hub
-        uses: docker/metadata-action@v3
-        with:
-          images: ghcr.io/${{ github.repository_owner }}/invch
-          tags: |
-            type=match,value={{branch}},pattern=.*\d,suffix=-latest
-      - name: Log into registry
-        uses: docker/login-action@v1
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push ${{ github.repository }}
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          platforms: linux/amd64
-          push: true
-          tags: ${{ steps.docker_meta_img_hub.outputs.tags }}
-          labels: ${{ steps.docker_meta_img_hub.outputs.labels }}
+  build_and_push:
+    permissions:
+      packages: write
+      security-events: write
+      contents: read
+    uses: dBildungsplattform/dbp-github-workflows/.github/workflows/image-publish-trivy.yaml@7.0.0
+    with:
+      image_name: "invch"
+      container_registry: "ghcr.io"
+      add_latest_tag: false
+      image_tag_generation: "ticket_from_branch"
+      run_trivy_scan: true
