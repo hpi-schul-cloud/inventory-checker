@@ -10,11 +10,8 @@ import requests
 from dxf import DXF, exceptions
 from constants import Constants
 import notifier
-import socket
 import utils.file_util
 import subprocess
-import json
-
 
 
 def check_versions(invch: InventoryChecker):

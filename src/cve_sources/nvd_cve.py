@@ -30,14 +30,6 @@ class NvdCVEs(CVESource):
         start_index = 0
         root: list = []
 
-        response = requests.get(Constants.NVD_CVE_URL + startDate + endDate + "&resultsPerPage=2000" + "&startIndex=" + str(start_index))
-
-        print(f"Response Status Code: {response.status_code}")
-
-        # dump response to json
-        with open('nvd_response.json', 'w') as f:
-            f.write(response.text)
-
         while not all_cves_parsed_flag:
             result: list = requests.get(
                 Constants.NVD_CVE_URL + startDate + endDate + "&resultsPerPage=2000" + "&startIndex=" + str(start_index)

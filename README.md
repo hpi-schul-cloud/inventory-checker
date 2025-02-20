@@ -43,5 +43,25 @@ The configuration variables are defined in the ansible group_vars or host_vars. 
 | **REPO_CREDENTIALS** | The credentials that are needed to fetch from registries like registry-1.docker.io. Provide a password or a token as password <br><br> **Note**: use registry-1.docker.io instead of docker.io <br><br> Example: <br><br> REPO_CREDENTIALS={"registry-1.docker.io": {"username": "maxmustermann","password": "abcdef"}} | no | {} | -, string
 | **KEYWORD_FILTER** | This is used to filter specific keywords like "node" since it is a term that is broadly used <br><br> Example: <br><br> KEYWORD_FILTER=["node", "backend"] | no | [] | -, string
 | **ADDITIONAL_KEYWORDS** | This is used to add additional keywords. For example "bbb" because it can't be fetched over grafana. <br><br> Example: <br><br> ADDITIONAL_KEYWORDS=["bbb"] | no | [] | -, string
+| **IGNORED_IMAGES_REPO** | This removes specified repos from being checked, like ionos official repos. | no | [] | -, string
+
+
+## Scraping installed packages on an Linux-OS
+For checking CVEs of packages, use this script to scrape the packages and write them to folder where node-exporter
+text files are locate. Like in example below. /path/to/nodexportertextfiles/
+
+```sh
+#!/bin/bash
+
+dpkg-query -W -f='${Package} ${Version}\n' | while read pkg version; do
+    # Remove Ubuntu-specific suffixes 
+    cleaned_version=$(echo "$version" | sed -E 's/[-+~]ubuntu[0-9.]+//')
+
+    # Remove leading epoch numbers 
+    cleaned_version=$(echo "$cleaned_version" | sed -E 's/^[0-9]+://')
+
+    echo "package_info{name=\"$pkg\", version=\"$cleaned_version\"} 1"
+done > /node-exporter-textfiles/packages.prom
+```
 
 \* When using JIRA the marked ENV are required

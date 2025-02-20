@@ -138,5 +138,4 @@ def load_inventory(invch: InventoryChecker):
                 "version": keyword["version"]
             })
 
-
     return keywords

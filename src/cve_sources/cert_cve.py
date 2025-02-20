@@ -87,7 +87,6 @@ class CertCVEs(CVESource):
             else:
                 affected_version = matched_entry.get("version", "unknown")
 
-            print("Matched entry: ", matched_entry)
 
             invch.new_cves[name] = {
                 "name": name,
