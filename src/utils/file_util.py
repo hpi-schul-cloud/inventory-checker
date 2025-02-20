@@ -48,14 +48,10 @@ def create_log_dir():
 
 
 def save_cves(invch: InventoryChecker):
-    try:
-        invch.saved_cves.update(invch.new_cves)
-
-        with open(Constants.CVE_FILE_PATH, "w", encoding="utf-8") as file:
-            json.dump(invch.saved_cves, file, indent=4)
-
-    except Exception as e:
-        logging.error(f"Error saving CVEs: {e}")
+    file = open(Constants.CVE_FILE_PATH, "w")
+    invch.saved_cves.update(invch.new_cves)
+    file.write(json.dumps(invch.saved_cves))
+    file.close()
 
 
 def save_versions(invch: InventoryChecker):

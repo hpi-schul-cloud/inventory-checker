@@ -73,7 +73,7 @@ class NvdCVEs(CVESource):
             matched_docker_compose = next(
                 (img for img in invch.images if (
                     img["container_name"].lower() in description or
-                    img["compose_service"].lower() in description
+                    img["image"].lower() in description
                 )),
                 False
             )
@@ -160,6 +160,11 @@ class NvdCVEs(CVESource):
 
                 keyword_value = matched_entry.get("keyword", matched_entry.get("container_name", "unknown"))
 
+                if isinstance(matched_entry["keyword"], dict):
+                    affected_version = matched_entry["keyword"].get("version", "unknown")
+                else:
+                    affected_version = matched_entry.get("version", "unknown")
+
                 invch.new_cves[name] = {
                     "name": name,
                     "url": f"https://nvd.nist.gov/vuln/detail/{name}",
@@ -167,7 +172,7 @@ class NvdCVEs(CVESource):
                     "keyword": keyword_value,
                     "description": description,
                     "severity": severity,
-                    "affected_versions": [matched_entry["version"]] if matched_entry.get("version") else [],
+                    "affected_versions": affected_version,
                     "type": matched_type,
                     "from": "NVD"
                 }

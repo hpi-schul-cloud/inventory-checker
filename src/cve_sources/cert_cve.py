@@ -45,7 +45,7 @@ class CertCVEs(CVESource):
             matched_docker_compose = next(
                 (img for img in invch.images if (
                     img["container_name"].lower() in description or
-                    img["compose_service"].lower() in description
+                    img["image"].lower() in description
                 )),
                 False
             )
@@ -81,11 +81,14 @@ class CertCVEs(CVESource):
             if exit_flag:
                 continue  
 
-            affected_version = matched_entry["version"] if matched_entry.get("version") and matched_entry["version"] != "latest" else "unknown"
-
             keyword_value = matched_entry.get("keyword", matched_entry.get("container_name", "unknown"))
+            
+            if isinstance(matched_entry["keyword"], dict):
+                affected_version = matched_entry["keyword"].get("version", "unknown")
+            else:
+                affected_version = matched_entry.get("version", "unknown")
 
-
+            print("Matched entry: ", matched_entry)
 
             invch.new_cves[name] = {
                 "name": name,
@@ -94,7 +97,7 @@ class CertCVEs(CVESource):
                 "keyword": keyword_value,
                 "description": description,
                 "severity": severity,
-                "affected_versions": [affected_version],
+                "affected_versions": affected_version,
                 "type": matched_type,
             }
 

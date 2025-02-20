@@ -144,9 +144,3 @@ def load_inventory(invch: InventoryChecker):
 
 
     return keywords
-
-
-def mark_container_source(container_labels):
-    if "container_label_com_docker_compose_project" in container_labels:
-        return "docker-compose"
-    return "registry" 

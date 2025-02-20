@@ -16,22 +16,6 @@ import subprocess
 import json
 
 
-def get_host_or_default(image_full: str) -> str:
-    # Wenn kein Host angegeben ist (kein '/' im Namen), setze den Host auf "docker.io"
-    if "/" not in image_full:
-        return "docker.io"
-    
-    # Extrahiere den Host aus dem Image, wenn "/" vorhanden ist
-    host = image_full.split("/")[0]
-    
-    # Versuche, den Host aufzulösen, um sicherzustellen, dass er gültig ist
-    try:
-        socket.gethostbyname(host)  # Versuche, den Hostnamen aufzulösen
-        return host
-    except socket.gaierror:
-        # Wenn der Host ungültig ist, setze ihn auf 'docker.io'
-        return "docker.io"
-    
 
 def check_versions(invch: InventoryChecker):
     logging.info("")

@@ -36,7 +36,7 @@ class CisaCVEs(CVESource):
 
             
             matched_package = next(
-                (pkg for pkg in invch.packages if re.search(rf'\b{re.escape(pkg["keyword"].lower())}\b', vulnerability_name)),
+                (pkg for pkg in invch.packages if re.search(rf'\b{re.escape(pkg["keyword"].lower())}\b', vendor_project)),
                 False
             )
 
