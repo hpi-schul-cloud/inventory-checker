@@ -6,7 +6,6 @@ from prometheus_client import Gauge
 from constants import Constants
 from cve_sources.abstract_cve_source import CVESource
 from utils.severity_util import SeverityUtil
-import json
 import re
 
 
@@ -97,7 +96,7 @@ class CertCVEs(CVESource):
                 "keyword": keyword_value,
                 "description": description,
                 "severity": severity,
-                "affected_versions": affected_version,
+                "affected_versions": [affected_version],
                 "type": matched_type,
             }
 

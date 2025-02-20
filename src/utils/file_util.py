@@ -1,7 +1,5 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-import logging
-import os
 
 if TYPE_CHECKING:
     from inventory_checker import InventoryChecker

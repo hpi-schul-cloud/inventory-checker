@@ -6,7 +6,6 @@ from prometheus_client import Gauge
 from constants import Constants
 from cve_sources.abstract_cve_source import CVESource
 from utils.severity_util import SeverityUtil
-import json
 
 class CisaCVEs(CVESource):
     STATUS_REPORT = Gauge('invch_cisa', 'CISA CVE source available in Inventory Checker')

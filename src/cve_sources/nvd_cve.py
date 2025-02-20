@@ -9,7 +9,6 @@ from constants import Constants
 from cve_sources.abstract_cve_source import CVESource
 from utils.severity_util import SeverityUtil
 import re
-import json
 
 
 class NvdCVEs(CVESource):
@@ -30,6 +29,14 @@ class NvdCVEs(CVESource):
         all_cves_parsed_flag: bool = False
         start_index = 0
         root: list = []
+
+        response = requests.get(Constants.NVD_CVE_URL + startDate + endDate + "&resultsPerPage=2000" + "&startIndex=" + str(start_index))
+
+        print(f"Response Status Code: {response.status_code}")
+
+        # dump response to json
+        with open('nvd_response.json', 'w') as f:
+            f.write(response.text)
 
         while not all_cves_parsed_flag:
             result: list = requests.get(
@@ -172,7 +179,7 @@ class NvdCVEs(CVESource):
                     "keyword": keyword_value,
                     "description": description,
                     "severity": severity,
-                    "affected_versions": affected_version,
+                    "affected_versions": [affected_version],
                     "type": matched_type,
                     "from": "NVD"
                 }
