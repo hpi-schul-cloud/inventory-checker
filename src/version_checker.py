@@ -110,7 +110,7 @@ def check_versions(invch: InventoryChecker):
                 messages.append(message)
                 logging.warning(message)
 
-    logging.info("Found " + str(len(messages)) + " version mismatch<es or issues!")
+    logging.info("Found " + str(len(messages)) + " version mismatches or issues!")
 
     if len(messages) != 0:
         logging.info("Posting version info message...")

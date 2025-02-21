@@ -61,119 +61,109 @@ class NvdCVEs(CVESource):
                 description_data[0],
             )["value"]
 
-
-            # First matching keyword or False if no keyword matches (generator empty)
-            keyword = next(
-                (key for key in invch.inventory if re.search(rf'\b{re.escape(key["keyword"].lower())}\b', description, re.IGNORECASE)),
-                False
+            matched_entry = next(
+            (
+                entry
+                for entry in invch.images
+                if re.search(rf'\b{re.escape(entry.get("keyword", entry.get("container_name", "")).lower())}\b', description, re.IGNORECASE)
+                or entry.get("image", "").lower() in description
+            ),
+            False
             )
+            if not matched_entry:
+                continue # skip the cve if no match is found
+
+            matched_type = "docker-compose" if matched_entry in invch.images else "registry"
  
-            matched_docker_compose = next(
-                (img for img in invch.images if (
-                    img["container_name"].lower() in description or
-                    img["image"].lower() in description
-                )),
-                False
-            )
+            if contains(invch.saved_cves.keys(), name):
+                if contains(invch.saved_cves[name].keys(), "notAffected"):
+                    continue
 
-            if keyword:
-                matched_entry = {"keyword": keyword, "version": "unknown"}  
-                matched_type = "image"
-            elif matched_docker_compose:
-                matched_entry = matched_docker_compose
-                matched_type = "docker-compose"
-            else:
-               continue 
-            if keyword:
-                if contains(invch.saved_cves.keys(), name):
-                    if contains(invch.saved_cves[name].keys(), "notAffected"):
-                        continue
+            affected = False
+            impact_data = child["cve"]["metrics"]
+            severity = "unknown"
 
-                affected = False
-                impact_data = child["cve"]["metrics"]
-                severity = "unknown"
+            for key in invch.inventory:
+                if affected:
+                    break
 
-                for key in invch.inventory:
-                    if affected:
-                        break
+                keyword = key
+                if keyword["keyword"].lower() in description.lower():
+                    current_version: str = key["version"]
 
-                    keyword = key
-                    if keyword["keyword"].lower() in description.lower():
-                        current_version: str = key["version"]
+                    if "configurations" in child["cve"]:
+                        versions = NvdCVEs.retrieve_versions(child["cve"]["configurations"][0]["nodes"], keyword["keyword"])
+                        
+                    else: 
+                        versions = []
 
-                        if "configurations" in child["cve"]:
-                            versions = NvdCVEs.retrieve_versions(child["cve"]["configurations"][0]["nodes"], keyword["keyword"])
-                            
-                        else: 
-                            versions = []
+                    if len(versions) == 0:
+                        affected = True
 
-                        if len(versions) == 0:
-                            affected = True
+                    try:
+                        for version in versions:
+                            version_start = version.split(" - ")[0]
+                            version_end = version.split(" - ")[1]
 
-                        try:
-                            for version in versions:
-                                version_start = version.split(" - ")[0]
-                                version_end = version.split(" - ")[1]
+                            if version_start == "" and version_end == "":
+                                continue
 
-                                if version_start == "" and version_end == "":
-                                    continue
-
-                                if version_start == "":
-                                    if semver.compare(current_version, version_end) <= 0:
-                                        affected = True
-                                        break
-                                elif version_end == "":
-                                    if semver.compare(current_version, version_start) >= 0:
-                                        affected = True
-                                        break
-                                elif semver.compare(current_version, version_start) >= 0 and semver.compare(
-                                        current_version,
-                                        version_end) <= 0:
+                            if version_start == "":
+                                if semver.compare(current_version, version_end) <= 0:
                                     affected = True
                                     break
-                        except ValueError:
-                            affected = True  # Manual check if version is affected is required
-                            break
+                            elif version_end == "":
+                                if semver.compare(current_version, version_start) >= 0:
+                                    affected = True
+                                    break
+                            elif semver.compare(current_version, version_start) >= 0 and semver.compare(
+                                    current_version,
+                                    version_end) <= 0:
+                                affected = True
+                                break
+                    except ValueError:
+                        affected = True  # Manual check if version is affected is required
+                        break
 
-                if not affected:
-                    if contains(invch.new_cves.keys(), name):
-                        del invch.new_cves[name]
-                    if contains(invch.saved_cves.keys(), name):
-                        invch.saved_cves[name]["notAffected"] = True
-                    continue
+            if not affected:
+                if contains(invch.new_cves.keys(), name):
+                    del invch.new_cves[name]
+                if contains(invch.saved_cves.keys(), name):
+                    invch.saved_cves[name]["notAffected"] = True
+                continue
 
-                if contains(impact_data.keys(), "baseMetricV30"):
-                    severity = SeverityUtil.getUniformSeverity(impact_data["baseMetricV30"]["cvssData"]["baseSeverity"])
+            if contains(impact_data.keys(), "baseMetricV30"):
+                severity = SeverityUtil.getUniformSeverity(impact_data["baseMetricV30"]["cvssData"]["baseSeverity"])
 
-                # Replace severity and affected products of cve's that have an unknown severity or empty []
-                if contains(invch.saved_cves.keys(), name) or contains(
-                        invch.new_cves.keys(), name
-                ):
-                    if invch.new_cves.get(name) != None and invch.new_cves.get(name)["severity"] == "unknown":
-                        invch.new_cves.get(name)["severity"] = severity
+            # Replace severity and affected products of cve's that have an unknown severity or empty []
+            if contains(invch.saved_cves.keys(), name) or contains(
+                    invch.new_cves.keys(), name
+            ):
+                if invch.new_cves.get(name) != None and invch.new_cves.get(name)["severity"] == "unknown":
+                    invch.new_cves.get(name)["severity"] = severity
 
-                    if invch.new_cves.get(name) != None and len(invch.new_cves.get(name)["affected_versions"]) == 0:
-                        invch.new_cves.get(name)["affected_versions"] = versions
-                    continue
+                if invch.new_cves.get(name) != None and len(invch.new_cves.get(name)["affected_versions"]) == 0:
+                    invch.new_cves.get(name)["affected_versions"] = versions
+                continue
 
-                keyword_value = matched_entry.get("keyword", matched_entry.get("container_name", "unknown"))
+            matched_value = matched_entry.get("keyword", matched_entry.get("container_name", "unknown"))
 
-                if isinstance(matched_entry["keyword"], dict):
-                    affected_version = matched_entry["keyword"].get("version", "unknown")
-                else:
-                    affected_version = matched_entry.get("version", "unknown")
+            if isinstance(matched_entry["keyword"], dict):
+                affected_version = matched_entry["keyword"].get("version", "unknown")
+            else:
+                affected_version = matched_entry.get("version", "unknown")
 
-                invch.new_cves[name] = {
-                    "name": name,
-                    "url": f"https://nvd.nist.gov/vuln/detail/{name}",
-                    "date": date_converted.strftime("%d.%m.%Y"),
-                    "keyword": keyword_value,
-                    "description": description,
-                    "severity": severity,
-                    "affected_versions": [affected_version],
-                    "type": matched_type,
-                    "from": "NVD"
-                }
+            invch.new_cves[name] = {
+                "name": name,
+                "url": f"https://nvd.nist.gov/vuln/detail/{name}",
+                "date": date_converted.strftime("%d.%m.%Y"),
+                "keyword": matched_value,
+                "description": description,
+                "severity": severity,
+                "affected_versions": [affected_version],
+                "type": matched_type,
+                "from": "NVD"
+            }
 
 
     @staticmethod
