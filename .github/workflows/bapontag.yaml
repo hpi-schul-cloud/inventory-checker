@@ -7,47 +7,20 @@ on:
       - 'invch-[0-9]+.[0-9]+.[0-9]+'
 
 jobs:
-  build_and_push_docker:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Filter Tag name 
-        uses: olegtarasov/get-tag@v2.1
-        id: tagName
-        with:
-          tagRegex: "(.+?(?=-[0-9]))" 
-          tagRegexGroup: 1 
-
-      - name: Filter Version name 
-        uses: olegtarasov/get-tag@v2.1
-        id: versionName
-        with:
-          tagRegex: "${{ steps.tagName.outputs.tag }}-(.*)" 
-          tagRegexGroup: 1 
-          
-      - name: Checkout Code
-        uses: actions/checkout@v2
-
-      - name: Docker meta Service Name for docker hub
-        id: docker_meta_img_hub
-        uses: docker/metadata-action@v3
-        with:
-          images: ${{ secrets.DOCKER_USERNAME }}/${{ steps.tagName.outputs.tag }} 
-          tags: |
-            type=semver,pattern={{version}},value=${{ steps.versionName.outputs.tag }} 
-            type=semver,pattern={{major}}.{{minor}},value=${{ steps.versionName.outputs.tag }}  
-   
-      - name: Log into registry
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
-
-      - name: Build and push ${{ github.repository }}
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          platforms: linux/amd64
-          push: true
-          tags: ${{ steps.docker_meta_img_hub.outputs.tags }}
-          labels: ${{ steps.docker_meta_img_hub.outputs.labels }}
+  build_and_push:
+    uses: dBildungsplattform/dbp-github-workflows/.github/workflows/image-publish-trivy.yaml@7
+    permissions:
+      packages: write
+      contents: read
+      security-events: write
+    with:
+      image_name: invch
+      container_registry: dockerhub
+      dockerhub_repository_owner: "schulcloudci"
+      add_latest_tag: true
+      image_tag_generation: "mmp_git_tag,mm_git_tag"
+      context: .
+      run_trivy_scan: true
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
