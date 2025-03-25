@@ -90,6 +90,7 @@ class InventoryChecker:
         partial_fetching_failure = False
 
         # VuldbCVE no longer used because it is chargeable. The CVE's are also displayed in NVD.
+        # removed CertCVE sCisaCVE because debugging CISa which uses same url
         sources = [CisaCVEs, CertCVEs, NvdCVEs]
 
         for source in sources:
