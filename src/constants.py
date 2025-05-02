@@ -30,6 +30,7 @@ class Constants:
     KEYWORD_FILTER=["controller"]
     ADDITIONAL_KEYWORDS=[]
     IGNORED_IMAGES_REPO=["harbor.infra.cluster.ionos.com"]
+    PACKAGES_MIN_KEYWORD_LENGTH=4
 
     # CVE Source URLs
     CISA_CVE_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"

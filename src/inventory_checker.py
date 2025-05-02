@@ -346,6 +346,12 @@ if __name__ == "__main__":
             logging.info("ADDITIONAL_KEYWORDS loaded: =" + str(Constants.ADDITIONAL_KEYWORDS))
         else:
             logging.info("ADDITIONAL_KEYWORDS not available")
+        
+        if os.getenv("PACKAGES_MIN_KEYWORD_LENGTH"):
+            Constants.PACKAGES_MIN_KEYWORD_LENGTH = json.loads(os.getenv("PACKAGES_MIN_KEYWORD_LENGTH"))
+            logging.info("PACKAGES_MIN_KEYWORD_LENGTH loaded: =" + str(Constants.PACKAGES_MIN_KEYWORD_LENGTH))
+        else:
+            logging.info("PACKAGES_MIN_KEYWORD_LENGTH not available")
 
         prometheus_util.init_prometheus()
 

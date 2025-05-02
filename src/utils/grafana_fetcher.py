@@ -49,13 +49,15 @@ def extract_packages(prometheus_data):
         for field in schema_fields:
             labels = field.get("labels", {})
             if "name" in labels and "version" in labels:
-                package_entry = {
-                    'keyword': labels["name"].lower(),
-                    'version': labels["version"],
-                    'type': 'package'
-                }
-                if package_entry not in packages:
-                    packages.append(package_entry)
+                keyword = labels["name"].lower()
+                if len(keyword) >= Constants.PACKAGES_MIN_KEYWORD_LENGTH:
+                    package_entry = {
+                        'keyword': keyword,
+                        'version': labels["version"],
+                        'type': 'package'
+                    }
+                    if package_entry not in packages:
+                        packages.append(package_entry)
     return packages
 
 
