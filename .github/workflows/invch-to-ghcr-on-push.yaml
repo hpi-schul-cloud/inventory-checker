@@ -25,6 +25,6 @@ jobs:
     with:
       image_name: "invch"
       container_registry: "ghcr.io"
-      add_latest_tag: false
+      add_latest_tag: true
       image_tag_generation: "ticket_from_branch"
       run_trivy_scan: true
