@@ -108,7 +108,7 @@ def load_inventory(invch: InventoryChecker):
     keywords = []
 
     for container in invch.images:
-
+        print(container)
         if any(ignored in container["image"] for ignored in Constants.IGNORED_IMAGES_REPO):
             continue
 
