@@ -100,7 +100,7 @@ def load_inventory(invch: InventoryChecker):
     if not response:
         print("Failed to fetch inventory data from Prometheus.")
         return []
-
+    print(response)
     invch.packages = extract_packages(response)
     invch.images = extract_images(response)
     docker_compose_images = []
