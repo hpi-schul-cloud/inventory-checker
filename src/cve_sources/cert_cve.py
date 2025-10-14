@@ -53,7 +53,7 @@ class CertCVEs(CVESource):
                 matched_entry = matched_package
                 matched_type = "package"
             elif keyword:
-                matched_entry = {"keyword": keyword, "version": "unknown"}  
+                matched_entry = keyword
                 matched_type = "image"
             elif matched_docker_compose:
                 matched_entry = matched_docker_compose
