@@ -38,6 +38,7 @@ def fetch_prometheus_data():
             "to": "now",
         },
     )
+    request.raise_for_status()
     return request.json()
 
 
@@ -98,9 +99,7 @@ def extract_images(prometheus_data):
 def load_inventory(invch: InventoryChecker):
     response = fetch_prometheus_data()
     if not response:
-        print("Failed to fetch inventory data from Prometheus.")
-        return []
-    print(response)
+        raise Exception("Failed to fetch inventory data from Prometheus.")
     invch.packages = extract_packages(response)
     invch.images = extract_images(response)
     docker_compose_images = []
@@ -108,7 +107,6 @@ def load_inventory(invch: InventoryChecker):
     keywords = []
 
     for container in invch.images:
-        print(container)
         if any(ignored in container["image"] for ignored in Constants.IGNORED_IMAGES_REPO):
             continue
 
